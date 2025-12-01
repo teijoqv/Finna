@@ -1,0 +1,1708 @@
+<?php
+$this->headTitle('muokkaus');
+
+const PATHFILE = "/data/vufind2-views/replace/replace/themes/custom/files/kirjastokartta/";
+const PATHIMAGE = "/data/vufind2-views/replace/replace/themes/custom/images/kirjastokartta/";
+$formtype = "";
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    if (!array_key_exists("formtype", $_POST)) exit();
+    $formtype = $_POST["formtype"];
+    $hashedpassword = 'replacehash';
+    if ($formtype == "testpassword"){
+        if (!array_key_exists("password", $_POST)) exit();
+        $password = htmlspecialchars($_POST["password"]);
+        if (password_verify($password, $hashedpassword)){
+            $_SESSION["karttaeditpw"] = "approved";
+        }else{
+            usleep(2000000);
+            echo '<form method="post" action="karttaedit">
+                <input type="hidden" name="formtype" value="testpassword">
+                <label for="password">Salasana:</label>
+                <input type="text" name="password">
+                <input class="btn" type="submit" value="Kirjaudu">
+            </form>
+            </div></div>';
+            exit();
+        }
+    }else{
+        if (!array_key_exists("karttaeditpw", $_SESSION)) exit();
+        if ($_SESSION["karttaeditpw"] != "approved") exit();
+    }
+}else{
+    echo '<form method="post" action="karttaedit">
+        <input type="hidden" name="formtype" value="testpassword">
+        <label for="password">Salasana:</label>
+        <input type="text" name="password">
+        <input class="btn" type="submit" value="Kirjaudu">
+    </form>
+    </div></div>';
+    exit();
+}
+
+if ($formtype == "addbranch"){
+    if (!file_exists(PATHFILE."settings.json")){
+        $tempfile = fopen(PATHFILE."settings.json", "x");
+        fwrite($tempfile, '{"kirjastot":[],"osastot":[],"aineistolajit":[],"sijainnit":[]}'); 
+        fclose($tempfile);
+    }
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $branchnamefi = htmlspecialchars($_POST["branamefi"]);
+        $branchnamesv = htmlspecialchars($_POST["branamesv"]);
+        $branchnameen = htmlspecialchars($_POST["branameen"]);
+        $rulename = htmlspecialchars($_POST["rulename"]);
+        $r = 60;
+        $g = 255;
+        $b = 75;
+        $trans = 16;
+        array_push($settings["kirjastot"], array("fi" => $branchnamefi, "sv" => $branchnamesv, "en" => $branchnameen, "file" => $rulename, "maps" => array(), "color" => array("r" => $r, "g" => $g, "b" => $b, "t" => $trans)));
+        $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+        ftruncate($settingsfile, 0);
+        rewind($settingsfile);
+        fwrite($settingsfile, $settingsjson);
+        if (!file_exists(PATHFILE.$rulename.".json")){
+            $rulefile = fopen(PATHFILE.$rulename.".json", "x");
+            fwrite($rulefile, "[]");
+            fclose($rulefile);
+        }
+        fclose($settingsfile);
+    }
+    exit();
+}
+if ($formtype == "modifybranch"){
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $branch = htmlspecialchars($_POST["branch"]);
+        $branchnamefi = htmlspecialchars($_POST["branamefi"]);
+        $branchnamesv = htmlspecialchars($_POST["branamesv"]);
+        $branchnameen = htmlspecialchars($_POST["branameen"]);
+        $rulename = htmlspecialchars($_POST["rulename"]);
+        $color = htmlspecialchars($_POST["markcolor"]);
+        list($r, $g, $b) = sscanf($color, "#%02x%02x%02x");
+        $trans = 127 - htmlspecialchars($_POST["trans"]);
+        $settings["kirjastot"][$branch]["fi"] = $branchnamefi;
+        $settings["kirjastot"][$branch]["sv"] = $branchnamesv;
+        $settings["kirjastot"][$branch]["en"] = $branchnameen;
+        $settings["kirjastot"][$branch]["file"] = $rulename;
+        $settings["kirjastot"][$branch]["color"]["r"] = $r;
+        $settings["kirjastot"][$branch]["color"]["g"] = $g;
+        $settings["kirjastot"][$branch]["color"]["b"] = $b;
+        $settings["kirjastot"][$branch]["color"]["t"] = $trans;
+        $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+        ftruncate($settingsfile, 0);
+        rewind($settingsfile);
+        fwrite($settingsfile, $settingsjson);
+        if (!file_exists(PATHFILE.$rulename.".json")){
+            $rulefile = fopen(PATHFILE.$rulename.".json", "x");
+            fwrite($rulefile, "[]");
+            fclose($rulefile);
+        }
+        fclose($settingsfile);
+    }
+    exit();
+}
+if ($formtype == "removebranch"){
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $branch = htmlspecialchars($_POST["branch"]);
+        array_splice($settings["kirjastot"], $branch, 1);
+        $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+        ftruncate($settingsfile, 0);
+        rewind($settingsfile);
+        fwrite($settingsfile, $settingsjson);
+        fclose($settingsfile);
+    }
+    exit();
+}
+if ($formtype == "addmap"){
+    $targetfile = PATHIMAGE.basename($_FILES["mapfile"]["name"]);
+    $uploadOk = false;
+    // Check if image file is a actual image or fake image
+    $check = getimagesize($_FILES["mapfile"]["tmp_name"]);
+    if($check !== false) {
+        echo "File is an image - ".$check["mime"] . ".";
+        $uploadOk = true;
+    }
+    if ($uploadOk) {
+        if (move_uploaded_file($_FILES["mapfile"]["tmp_name"], $targetfile)) {
+            echo "The file ".htmlspecialchars(basename($_FILES["mapfile"]["name"]))." has been uploaded.";
+            $settingsfile = fopen(PATHFILE."settings.json", "r+");
+            if ($settingsfile){
+                rewind($settingsfile);
+                $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+                $settings = json_decode($settingsjson, true);
+                $branch = intval(htmlspecialchars($_POST["branch"]));
+                if (array_search(htmlspecialchars(basename($_FILES["mapfile"]["name"])), $settings["kirjastot"][$branch]["maps"]) === false){
+                    array_push($settings["kirjastot"][$branch]["maps"], htmlspecialchars(basename($_FILES["mapfile"]["name"])));
+                }
+                $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+                ftruncate($settingsfile, 0);
+                rewind($settingsfile);
+                fwrite($settingsfile, $settingsjson);
+                fclose($settingsfile);
+            }
+        }
+    }
+    exit();
+}
+if ($formtype == "removemap"){
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $branch = intval(htmlspecialchars($_POST["branch"]));
+        $map = (htmlspecialchars($_POST["map"]));
+        if ($map != "none"){
+            $mapind = intval($map);
+            if (file_exists(PATHIMAGE.$settings["kirjastot"][$branch]["maps"][$mapind])){
+                unlink(PATHIMAGE.$settings["kirjastot"][$branch]["maps"][$mapind]);
+            }
+            array_splice($settings["kirjastot"][$branch]["maps"], $mapind, 1);
+            $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+            ftruncate($settingsfile, 0);
+            rewind($settingsfile);
+            fwrite($settingsfile, $settingsjson);
+        }
+        fclose($settingsfile);
+    }
+    exit();
+}
+if ($formtype == "addrule"){
+    $branch = htmlspecialchars($_POST["branchfile"]);
+    $rulefile = fopen(PATHFILE.$branch.".json", "r+");
+    if ($rulefile){
+        rewind($rulefile);
+        $rulejson = fread($rulefile, filesize(PATHFILE.$branch.".json"));
+        $rules = json_decode($rulejson, true);
+        $rule = intval(htmlspecialchars($_POST["rule"]));
+        $empty = emptyRule();
+        $rest = array_splice($rules, $rule);
+        array_push($rules, $empty);
+        foreach($rest as $x){
+            array_push($rules, $x);
+        }
+        $rulejson = json_encode($rules, JSON_PRETTY_PRINT);
+        ftruncate($rulefile, 0);
+        rewind($rulefile);
+        fwrite($rulefile, $rulejson);
+        fclose($rulefile);
+    }
+    exit();
+}
+if ($formtype == "modifyrule"){
+    $branch = htmlspecialchars($_POST["branchfile"]);
+    $rulefile = fopen(PATHFILE.$branch.".json", "r+");
+    if ($rulefile){
+        rewind($rulefile);
+        $rulejson = fread($rulefile, filesize(PATHFILE.$branch.".json"));
+        $rules = json_decode($rulejson, true);
+        $rule = intval(htmlspecialchars($_POST["rule"]));
+        $departments = array();
+        $locations = array();
+        $formats = array();
+        if (array_key_exists("department", $_POST)) $departments = $_POST["department"];
+        if (array_key_exists("location", $_POST)) $locations = $_POST["location"];
+        if (array_key_exists("format", $_POST)) $formats = $_POST["format"];
+        $genre = trim(htmlspecialchars($_POST["genre"]));
+        $class = trim(htmlspecialchars($_POST["class"]));
+        $signum1 = htmlspecialchars($_POST["signum1"]);
+        $signum2 = htmlspecialchars($_POST["signum2"]);
+        $textfi = htmlspecialchars($_POST["textfi"]);
+        $textsv = htmlspecialchars($_POST["textsv"]);
+        $texten = htmlspecialchars($_POST["texten"]);
+        $marksjsonfi = htmlspecialchars($_POST["marksfi"], ENT_NOQUOTES);
+        $marksjsonsv = htmlspecialchars($_POST["markssv"], ENT_NOQUOTES);
+        $marksjsonen = htmlspecialchars($_POST["marksen"], ENT_NOQUOTES);
+        $marksfi = json_decode($marksjsonfi, true);
+        $markssv = json_decode($marksjsonsv, true);
+        $marksen = json_decode($marksjsonen, true);
+        $mapfi = htmlspecialchars($_POST["mapfi"]);
+        $mapsv = htmlspecialchars($_POST["mapsv"]);
+        $mapen = htmlspecialchars($_POST["mapen"]);
+        $rules[$rule] = createRule($departments, $locations,$formats, $genre, $class, $signum1, $signum2, $marksfi, $markssv, $marksen, $mapfi, $mapsv, $mapen, $textfi, $textsv, $texten);
+        $rulejson = json_encode($rules, JSON_PRETTY_PRINT);
+        ftruncate($rulefile, 0);
+        rewind($rulefile);
+        fwrite($rulefile, $rulejson);
+        fclose($rulefile);
+    }
+    exit();
+}
+if ($formtype == "removerule"){
+    $branch = htmlspecialchars($_POST["branchfile"]);
+    $rulefile = fopen(PATHFILE.$branch.".json", "r+");
+    if ($rulefile){
+        rewind($rulefile);
+        $rulejson = fread($rulefile, filesize(PATHFILE.$branch.".json"));
+        $rules = json_decode($rulejson, true);
+        $rule = intval(htmlspecialchars($_POST["rule"]));
+        array_splice($rules, $rule, 1);
+        $rulejson = json_encode($rules, JSON_PRETTY_PRINT);
+        ftruncate($rulefile, 0);
+        rewind($rulefile);
+        fwrite($rulefile, $rulejson);
+        fclose($rulefile);
+    }
+    exit();
+}
+if ($formtype == "moverules"){
+    $orderjson = htmlspecialchars($_POST["order"]);
+    $branch = htmlspecialchars($_POST["branchfile"]);
+    $order = json_decode($orderjson, true);
+    $rulefile = fopen(PATHFILE.$branch.".json", "r+");
+    if ($rulefile){
+        rewind($rulefile);
+        $rulejson = fread($rulefile, filesize(PATHFILE.$branch.".json"));
+        $rules = json_decode($rulejson, true);
+        $newrules = array();
+        foreach($order as $x){
+            array_push($newrules, $rules[intval(htmlspecialchars($x))]);
+        }
+        $rulejson = json_encode($newrules, JSON_PRETTY_PRINT);
+        ftruncate($rulefile, 0);
+        rewind($rulefile);
+        fwrite($rulefile, $rulejson);
+        fclose($rulefile);
+    }
+    exit();
+}
+function createRule($dep, $loc, $for, $gen, $cla, $sig1, $sig2, $marksfi, $markssv, $marksen, $mapfi, $mapsv, $mapen, $textfi, $textsv, $texten){
+    $depcont = "";
+    $loccont = "";
+    $forcont = "";
+    $gencont = "";
+    $clacont = "";
+    $sigcont = "";
+// department regex
+    $deplen = count($dep);
+    if ($deplen > 0){
+        $depcont = "^(";
+        for($x = 0; $x < $deplen; $x++){
+            $depcont .= $dep[$x];
+            if ($x < $deplen-1) $depcont .= "|";
+        }
+        $depcont .= ")$";
+    }
+// location regex
+    $loclen = count($loc);
+    if ($loclen > 0){
+        $loccont = "^(";
+        for($x = 0; $x < $loclen; $x++){
+            $loccont .= $loc[$x];
+            if ($x < $loclen-1) $loccont .= "|";
+        }
+        $loccont .= ")$";
+    }
+// format regex
+    $forlen = count($for);
+    if ($forlen > 0){
+        $forcont = "^(";
+        for($x = 0; $x < $forlen; $x++){
+            $forcont .= $for[$x];
+            if ($x < $forlen-1) $forcont .= "|";
+        }
+        $forcont .= ")$";
+    }
+// genre regex
+    $genres = explode(',', $gen);
+    $genlen = count($genres);
+    if ($genlen > 0){
+        if (!($genlen == 1 && $genres[0] == "")){
+            $gencont = "^(";
+            for($x = 0; $x < $genlen; $x++){
+                $gencont .= trim(str_replace("*", "\w*", $genres[$x]));
+                if ($x < $genlen-1) $gencont .= "|";
+            }
+            $gencont .= ") - ";
+        }
+    }
+// class regex
+    $classes = explode(',', $cla);
+    $clalen = count($classes);
+    
+    if ($clalen > 0){
+        if (!($clalen == 1 && $classes[0] == "")){
+            $clacont = "[a-z]?(";
+            for($x = 0; $x < $clalen; $x++){
+                $claran;
+                if (preg_match("/(\S+) *- *(\S+)/", $classes[$x], $claran)){
+                    if (count($claran) == 3){
+                        $cla1 = str_replace("*", "", $claran[1]);
+                        $cla2 = $claran[2];
+                        $cla1len = strlen($cla1);
+                        $cla2len = strlen(str_replace("*", "", $cla2));
+                        $further = true;
+                        $s = 0;
+                        do {
+                            if ($s != 2){
+                                $tight = false;
+                                $separation;
+                                if ($s < $cla1len && $s < $cla2len){
+                                    $separation = $cla2[$s] - $cla1[$s];
+                                }else{
+                                    $separation = 1;
+                                    $s--;
+                                    if ($s == 2) $s--;
+                                    if ($cla1len < $cla2len){
+                                        $tight = true;
+                                    }
+                                    if ($cla1len == $cla2len){
+                                        $separation = -1;
+                                    }
+                                }
+                                if ($separation > 1){
+                                    for($y = 1; $y < $separation; $y++){
+                                        $clacont .= substr($cla1, 0, $s).($cla1[$s] + $y)."\S*|";
+                                    }
+                                    
+                                }
+                                if ($separation > 0){
+                                    for($y = $s+1; $y < $cla1len; $y++){
+                                        if ($y != 2){
+                                            if ($cla1[$y] < 9) $clacont .= substr($cla1, 0, $y)."[".($cla1[$y] + 1)."-9]\S*|";
+                                        }
+                                    }
+                                    if (!$tight){
+                                        $clacont .= $cla1."\S*|";
+                                    }
+                                    for($y = $s+1; $y < $cla2len; $y++){
+                                        if ($y != 2){
+                                            if ($cla2[$y] > 0) $clacont .= substr($cla2, 0, $y)."[0-".($cla2[$y] - 1)."]\S*|";
+                                            if ($y == 3){
+                                                $clacont .= substr($cla2, 0, 2)."|";
+                                            }else{
+                                                $clacont .= substr($cla2, 0, $y)."|";
+                                            }
+                                        }
+                                    }
+                                    $further = false;
+                                }
+                                if ($separation == 0){
+                                    $further = true;
+                                }else{
+                                    $further = false;
+                                }
+                            }
+                            $s++;
+                        } while($further); //($s = 0; $s < $cla1len || $s < $cla2len; $s++)
+                        $clacont .= str_replace("*", "\S*", $cla2);
+                    }
+                }else{
+                    $clacont .= str_replace("*", "\S*", trim($classes[$x]));
+                }
+                if ($x < $clalen-1) $clacont .= "|";
+            }
+            $clacont .= ") ";
+            if ($gencont == ""){
+                $clacont = "(^".$clacont."| ".$clacont.")";
+            }
+        }
+    }
+//signum regex
+    if ($sig1 != "" || $sig2 != ""){
+        $sigcont = "[";
+        if ($sig1 == "" || $sig1 == "a"){
+            $sigcont .= "0-9a";
+        }else{
+            $sigcont .= $sig1;
+        }
+        if ($sig2 == ""){
+            $sigcont .= "-ö";
+        }else{
+            $sigcont .= "-".$sig2;
+        }
+        $sigcont .= "].?.?$";
+        if ($clacont == "" && $gencont != ""){
+            $sigcont = "\S* ".$sigcont;
+        }
+        if ($clacont == "" && $gencont == ""){
+            $sigcont = "(^".$sigcont."| ".$sigcont.")";
+        }
+    }
+    
+    $depreg = "/".$depcont."/";
+    $locreg = "/".$loccont."/";
+    $forreg = "/".$forcont."/";
+    $calreg = "/".$gencont.$clacont.$sigcont."/iu";
+    $text = array("fi"=>$textfi, "sv"=>$textsv, "en"=>$texten);
+    $maps = array("fi"=>$mapfi, "sv"=>$mapsv, "en"=>$mapen);
+    $markings = array("fi"=>$marksfi, "sv"=>$markssv, "en"=>$marksen);
+    return array("dep"=>$dep, "loc"=>$loc, "for"=>$for, "gen"=>$gen, "cla"=>$cla, "sig1"=>$sig1, "sig2"=>$sig2, "depreg"=>$depreg, "locreg"=>$locreg, "forreg"=>$forreg, "calreg"=>$calreg, "marks"=>$markings, "map"=>$maps, "txt"=>$text);
+}
+function emptyRule(){
+    $text = array("fi"=>"", "sv"=>"", "en"=>"");
+    $maps = array("fi"=>"", "sv"=>"", "en"=>"");
+    $markings = array("fi"=>array(), "sv"=>array(), "en"=>array());
+    return array("dep"=>array(), "loc"=>array(), "for"=>array(), "gen"=>"", "cla"=>"", "sig1"=>"", "sig2"=>"", "depreg"=>"//", "locreg"=>"//", "forreg"=>"//", "calreg"=>"//", "marks"=>$markings, "map"=>$maps, "txt"=>$text);
+}
+
+if ($formtype == "adddep" || $formtype == "addloc" || $formtype == "addfor"){
+    if (!file_exists(PATHFILE."settings.json")){
+        $tempfile = fopen(PATHFILE."settings.json", "x");
+        fwrite($tempfile, '{"kirjastot":[],"osastot":[],"aineistolajit":[],"sijainnit":[]}'); 
+        fclose($tempfile);
+    }
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $fi = htmlspecialchars($_POST["namefi"]);
+        $sv = htmlspecialchars($_POST["namesv"]);
+        $en = htmlspecialchars($_POST["nameen"]);
+        if ($formtype == "adddep"){
+            if (count($settings["osastot"]) > 0){
+                $ind = $settings["osastot"][count($settings["osastot"])-1]["ind"] + 1;
+                array_push($settings["osastot"], array("ind"=>$ind, "fi"=>$fi, "sv"=>$sv, "en"=>$en));
+            }else{
+                $settings["osastot"]["0"] = array("ind"=>0, "fi"=>$fi, "sv"=>$sv, "en"=>$en);
+            }
+        }
+        if ($formtype == "addloc"){
+            if (count($settings["sijainnit"]) > 0){
+                $ind = $settings["sijainnit"][count($settings["sijainnit"])-1]["ind"] + 1;
+                array_push($settings["sijainnit"], array("ind"=>$ind, "fi"=>$fi, "sv"=>$sv, "en"=>$en));
+            }else{
+                $settings["sijainnit"]["0"] = array("ind"=>0, "fi"=>$fi, "sv"=>$sv, "en"=>$en);
+            }
+        }
+        if ($formtype == "addfor"){
+            if (count($settings["aineistolajit"]) > 0){
+                $ind = $settings["aineistolajit"][count($settings["aineistolajit"])-1]["ind"] + 1;
+                array_push($settings["aineistolajit"], array("ind"=>$ind, "fi"=>$fi, "sv"=>$sv, "en"=>$en));
+            }else{
+                $settings["aineistolajit"]["0"] = array("ind"=>0, "fi"=>$fi, "sv"=>$sv, "en"=>$en);
+            }
+        }
+        $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+        ftruncate($settingsfile, 0);
+        rewind($settingsfile);
+        fwrite($settingsfile, $settingsjson);
+        fclose($settingsfile);
+    }
+    exit();
+}
+if ($formtype == "modifydep" || $formtype == "modifyloc" || $formtype == "modifyfor"){
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $fi = htmlspecialchars($_POST["namefi"]);
+        $sv = htmlspecialchars($_POST["namesv"]);
+        $en = htmlspecialchars($_POST["nameen"]);
+        $index = intval(htmlspecialchars($_POST["index"]));
+        if ($formtype == "modifydep"){
+            $settings["osastot"][$index]["fi"] = $fi;
+            $settings["osastot"][$index]["sv"] = $sv;
+            $settings["osastot"][$index]["en"] = $en;
+        }
+        if ($formtype == "modifyloc"){
+            $settings["sijainnit"][$index]["fi"] = $fi;
+            $settings["sijainnit"][$index]["sv"] = $sv;
+            $settings["sijainnit"][$index]["en"] = $en;
+        }
+        if ($formtype == "modifyfor"){
+            $settings["aineistolajit"][$index]["fi"] = $fi;
+            $settings["aineistolajit"][$index]["sv"] = $sv;
+            $settings["aineistolajit"][$index]["en"] = $en;
+        }
+        $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+        ftruncate($settingsfile, 0);
+        rewind($settingsfile);
+        fwrite($settingsfile, $settingsjson);
+        fclose($settingsfile);
+    }
+    exit();
+}
+if ($formtype == "removedep" || $formtype == "removeloc" || $formtype == "removefor"){
+    $settingsfile = fopen(PATHFILE."settings.json", "r+");
+    if ($settingsfile){
+        rewind($settingsfile);
+        $settingsjson = fread($settingsfile, filesize(PATHFILE."settings.json"));
+        $settings = json_decode($settingsjson, true);
+        $index = intval(htmlspecialchars($_POST["index"]));
+        if ($formtype == "removedep"){
+            unset($settings["osastot"][$index]);
+        }
+        if ($formtype == "removeloc"){
+            unset($settings["sijainnit"][$index]);
+        }
+        if ($formtype == "removefor"){
+            unset($settings["aineistolajit"][$index]);
+        }
+        $settingsjson = json_encode($settings, JSON_PRETTY_PRINT);
+        ftruncate($settingsfile, 0);
+        rewind($settingsfile);
+        fwrite($settingsfile, $settingsjson);
+        fclose($settingsfile);
+    }
+    exit();
+}
+
+?>
+
+<h2>Karttaedit</h2>
+
+<div id="kartta-main">
+    <b>Yksiköt</b>
+    <?=$this->component('finna-toggletip', [
+        'icon' => 'help',
+        'iconClass' => 'search-help-icon',
+        'ariaLabel' => 'Ohje',
+        'contentHtml' => $this->translate('tooltip_kartta_yksikot'),
+        'class' => 'tooltip-button tooltip-kartta'
+    ])?>
+    <br><br>
+    <div id="branches"></div>
+    <form id="addbranch">
+        <input type="hidden" name="formtype" value="addbranch">
+        suomi:
+        <input type="text" name="branamefi">
+        ruotsi:
+        <input type="text" name="branamesv">
+        englanti:
+        <input type="text" name="branameen">
+        Sääntöryhmän nimi:
+        <input type="text" name="rulename" size="10">
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="LISÄÄ YKSIKKÖ">
+    </form>
+    <br><br><b>Osastot</b>
+    <?=$this->component('finna-toggletip', [
+        'icon' => 'help',
+        'iconClass' => 'search-help-icon',
+        'ariaLabel' => 'Ohje',
+        'contentHtml' => $this->translate('tooltip_kartta_osastot'),
+        'class' => 'tooltip-button tooltip-kartta'
+    ])?>
+    <br><br>
+    <div id="departments"></div>
+    <form id="adddep">
+        <input type="hidden" name="formtype" value="adddep">
+        suomi:
+        <input type="text" name="namefi">
+        ruotsi:
+        <input type="text" name="namesv">
+        englanti:
+        <input type="text" name="nameen">
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="LISÄÄ OSASTO">
+    </form>
+    <br><br><b>Aineistolajit</b>
+    <?=$this->component('finna-toggletip', [
+        'icon' => 'help',
+        'iconClass' => 'search-help-icon',
+        'ariaLabel' => 'Ohje',
+        'contentHtml' => $this->translate('tooltip_kartta_aineistolajit'),
+        'class' => 'tooltip-button tooltip-kartta'
+    ])?>
+    <br><br>
+    <div id="formats"></div>
+    <form id="addfor">
+        <input type="hidden" name="formtype" value="addfor">
+        suomi:
+        <input type="text" name="namefi">
+        ruotsi:
+        <input type="text" name="namesv">
+        englanti:
+        <input type="text" name="nameen">
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="LISÄÄ AINEISTOLAJI">
+    </form>
+    <br><br><b>Sijainnit</b>
+    <?=$this->component('finna-toggletip', [
+        'icon' => 'help',
+        'iconClass' => 'search-help-icon',
+        'ariaLabel' => 'Ohje',
+        'contentHtml' => $this->translate('tooltip_kartta_sijainnit'),
+        'class' => 'tooltip-button tooltip-kartta'
+    ])?>
+    <br><br>
+    <div id="locations"></div>
+    <form id="addloc">
+        <input type="hidden" name="formtype" value="addloc">
+        suomi:
+        <input type="text" name="namefi">
+        ruotsi:
+        <input type="text" name="namesv">
+        englanti:
+        <input type="text" name="nameen">
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="LISÄÄ SIJAINTI">
+    </form>
+</div>
+
+<div id="kartta-department">
+    <div id="kartta-department-pre"></div>
+    <form id="editdep">
+        <input type="hidden" name="formtype" value="modifydep">
+        <input id="depformdep" type="hidden" name="index">
+        suomi:
+        <input id="dep-fi" type="text" name="namefi">
+        ruotsi:
+        <input id="dep-sv" type="text" name="namesv">
+        englanti:
+        <input id="dep-en" type="text" name="nameen"><br><br>
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="TALLENNA"><br>
+    </form>
+    <div id="kartta-department-post"></div><br><br>
+    <div><p>Älä poista osastoa, ellet ole varma, ettei se enää ole käytössä!</p><button id="departmentremove" class="btn kartta-btn-red">POISTA OSASTO</button></div>
+</div>
+
+<div id="kartta-location">
+    <div id="kartta-location-pre"></div>
+    <form id="editloc">
+        <input type="hidden" name="formtype" value="modifyloc">
+        <input id="locformloc" type="hidden" name="index">
+        suomi:
+        <input id="loc-fi" type="text" name="namefi">
+        ruotsi:
+        <input id="loc-sv" type="text" name="namesv">
+        englanti:
+        <input id="loc-en" type="text" name="nameen"><br><br>
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="TALLENNA"><br>
+    </form>
+    <div id="kartta-location-post"></div><br><br>
+    <div><p>Älä poista sijaintia, ellet ole varma, ettei se enää ole käytössä!</p><button id="locationremove" class="btn kartta-btn-red">POISTA SIJAINTI</button></div>
+</div>
+
+<div id="kartta-format">
+    <div id="kartta-format-pre"></div>
+    <form id="editfor">
+        <input type="hidden" name="formtype" value="modifyfor">
+        <input id="forformfor" type="hidden" name="index">
+        suomi:
+        <input id="for-fi" type="text" name="namefi">
+        ruotsi:
+        <input id="for-sv" type="text" name="namesv">
+        englanti:
+        <input id="for-en" type="text" name="nameen"><br><br>
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="TALLENNA"><br>
+    </form>
+    <div id="kartta-format-post"></div><br><br>
+    <div><p>Älä poista aineistolajia, ellet ole varma, ettei se enää ole käytössä!</p><button id="formatremove" class="btn kartta-btn-red">POISTA AINEISTOLAJI</button></div>
+</div>
+
+<div id="kartta-branch">
+    <div id="kartta-branch-pre"></div>
+    <form id="branchform">
+        <input type="hidden" name="formtype" value="modifybranch">
+        <input id="branchformbranch" type="hidden" name="branch">
+        suomi:
+        <input id="branch-fi" type="text" name="branamefi">
+        ruotsi:
+        <input id="branch-sv" type="text" name="branamesv">
+        englanti:
+        <input id="branch-en" type="text" name="branameen"><br><br>
+        Sääntöryhmä:
+        <?=$this->component('finna-toggletip', [
+            'icon' => 'help',
+            'iconClass' => 'search-help-icon',
+            'ariaLabel' => 'Ohje',
+            'contentHtml' => $this->translate('tooltip_kartta_saanto'),
+            'class' => 'tooltip-button tooltip-kartta'
+        ])?>
+        <input id="branch-rule" type="text" size="10" name="rulename">
+        Paikkamerkintöjen väri:
+        <input id="markcolor" type="color" name="markcolor" value="#3dff40">
+        peittävyys:
+        <input type="range" id="marktrans" name="trans" min="0" max="127" value="0">
+        &nbsp;&nbsp;
+        <input class="btn btn-primary" type="submit" value="TALLENNA"><br>
+    </form>
+    <hr>
+    <form id="mapform">
+        <input type="hidden" name="formtype" value="addmap">
+        <input id="mapformbranch" type="hidden" name="branch">
+        Valitse uusi pohjapiirros ladattavaksi:
+        <input type="file" name="mapfile" id="mapfile" accept="image/png, image/jpeg, image/gif" required>
+        <input type="submit" value="Lataa">
+    </form>
+    <div id="mapform-post"></div>
+    <br>
+    <form id="removemapform">
+        <input type="hidden" name="formtype" value="removemap">
+        <input id="removemapbranch" type="hidden" name="branch">
+        Valitse pohjapiirros poistettavaksi:
+        <select id="branchmaplist" name="map" required>
+        </select>
+        &nbsp;&nbsp;
+        <input type="submit" value="Poista">
+    </form>
+    <hr>
+    <div id="kartta-branch-post"></div>
+    <br>
+    <p>Lisää sääntöjä plus-merkkejä klikkaamalla.
+    <?=$this->component('finna-toggletip', [
+        'icon' => 'help',
+        'iconClass' => 'search-help-icon',
+        'ariaLabel' => 'Ohje',
+        'contentHtml' => $this->translate('tooltip_kartta_saannot'),
+        'class' => 'tooltip-button tooltip-kartta'
+    ])?>
+    Voit siirtää sääntöjä toiseen järjestykseen hiirellä raahaamalla. Klikkaa sitten "Tallenna sääntöjen järjestys".</p>
+    <form id='moverulesform'>
+        <input type='hidden' name='formtype' value='moverules'>
+        <input id="moverulesorder" type='hidden' name='order' value=''>
+        <input id="mrformbranchfile" type='hidden' name='branchfile' value=''>
+        <input id="mrformbranch" type='hidden' name='branch' value=''>
+        <input class='btn btn-primary' type='submit' value='Tallenna sääntöjen järjestys'>
+    </form>
+    <div id="rules"></div><br><br>
+    <div><p>Älä poista yksikköä, ellei se oikeasti ole jäänyt turhaksi!</p><button id="branchremove" class="btn kartta-btn-red">POISTA YKSIKKÖ</button></div> <!--style="background-color: #F01515;"-->
+</div>
+
+<div id="kartta-rule">
+    <div id="kartta-rule-pre"></div>
+    <form id="ruleform">
+        <input type='hidden' name='formtype' value='modifyrule'>
+        <input type='hidden' id="ruleformbranch" name='branchfile' value=''>
+        <input type='hidden' id="ruleformrule" name='rule' value=''>
+        <input type='hidden' id="rulemarksfi" name='marksfi' value=''>
+        <input type='hidden' id="rulemarkssv" name='markssv' value=''>
+        <input type='hidden' id="rulemarksen" name='marksen' value=''>
+        <div class="row">
+            <div class="col-sm-2">
+                Osasto:
+                <?=$this->component('finna-toggletip', [
+                    'icon' => 'help',
+                    'iconClass' => 'search-help-icon',
+                    'ariaLabel' => 'Ohje',
+                    'contentHtml' => $this->translate('tooltip_kartta_osasto'),
+                    'class' => 'tooltip-button tooltip-kartta'
+                ])?>
+                <br>
+                <select id="deplist" name="department[]" size="8" multiple>
+                </select>
+            </div>
+            <div class="col-sm-2">
+                Sijainti:
+                <?=$this->component('finna-toggletip', [
+                    'icon' => 'help',
+                    'iconClass' => 'search-help-icon',
+                    'ariaLabel' => 'Ohje',
+                    'contentHtml' => $this->translate('tooltip_kartta_sijainti'),
+                    'class' => 'tooltip-button tooltip-kartta'
+                ])?>
+                <br>
+                <select id="loclist" name="location[]" size="8" multiple>
+                </select>
+            </div>
+            <div class="col-sm-2">
+                Aineistolaji:
+                <?=$this->component('finna-toggletip', [
+                    'icon' => 'help',
+                    'iconClass' => 'search-help-icon',
+                    'ariaLabel' => 'Ohje',
+                    'contentHtml' => $this->translate('tooltip_kartta_aineistolaji'),
+                    'class' => 'tooltip-button tooltip-kartta'
+                ])?>
+                <br>
+                <select id="forlist" name="format[]" size="8" multiple>
+                </select>
+            </div>
+            <div class="col-sm-3">
+                Genre:
+                <?=$this->component('finna-toggletip', [
+                    'icon' => 'help',
+                    'iconClass' => 'search-help-icon',
+                    'ariaLabel' => 'Ohje',
+                    'contentHtml' => $this->translate('tooltip_kartta_genre'),
+                    'class' => 'tooltip-button tooltip-kartta'
+                ])?>
+                <br>
+                <input id="ruleformgen" name="genre" size="30"><br><br>
+                Luokka:
+                <?=$this->component('finna-toggletip', [
+                    'icon' => 'help',
+                    'iconClass' => 'search-help-icon',
+                    'ariaLabel' => 'Ohje',
+                    'contentHtml' => $this->translate('tooltip_kartta_luokka'),
+                    'class' => 'tooltip-button tooltip-kartta'
+                ])?>
+                <br>
+                <input id="ruleformcla" name="class" size="30">
+            </div>
+            <div class="col-sm-3">
+                Signumväli alkukirjaimella:<br>
+                <input id="ruleformsig1" name="signum1" size="1" maxlength="1" pattern="[A-Öa-ö]?">
+                -
+                <input id="ruleformsig2" name="signum2" size="1" maxlength="1" pattern="[A-Öa-ö]?">
+            </div>
+        </div>
+        <br>
+        Selitetekstit
+        <?=$this->component('finna-toggletip', [
+            'icon' => 'help',
+            'iconClass' => 'search-help-icon',
+            'ariaLabel' => 'Ohje',
+            'contentHtml' => $this->translate('tooltip_kartta_teksti'),
+            'class' => 'tooltip-button tooltip-kartta' // for back-compatibility
+        ])?>
+        <div class="row">
+            <div class="col-sm-4">
+                suomi:<br>
+                <input id="ruleformtxtfi" name="textfi" size="40">
+            </div>
+            <div class="col-sm-4">
+                ruotsi:<br>
+                <input id="ruleformtxtsv" name="textsv" size="40">
+            </div>
+            <div class="col-sm-4">
+                englanti:<br>
+                <input id="ruleformtxten" name="texten" size="40">
+            </div>
+        </div>
+        <br><br>
+        <input class="btn btn-primary" type="submit" value="TALLENNA">
+    </form>
+    <br>
+    <div id="kartta-rule-post" class="row">
+        <div id="closerulediv" class="col-sm-2">
+        </div>
+        <div class="col-sm-3">
+            <button class="langbutton active" id='rulemapfi'>suomi</button>
+            <button class="langbutton" id='rulemapsv'>ruotsi</button>
+            <button class="langbutton" id='rulemapen'>englanti</button>
+        </div>
+        <div class="col-sm-7" id="rulemapinfo">
+        </div>
+    </div>
+    <br>
+    <div class="row">
+        <div id="mapselect" class="col-sm-3">
+        </div>
+        <div class="col-sm-2" id="mapbuttons">
+        </div>
+        <div class="col-sm-4" id="mapinfo">
+        </div>
+        <div class="col-sm-3" id="mapmarks">
+        </div>
+    </div>
+    <br>
+    <div id="mapimage"></div>
+</div>
+
+
+<?php
+$script = <<<JS
+const pathfile = "/replace/themes/custom/files/kirjastokartta/";
+const pathim = "/replace/themes/custom/images/kirjastokartta/";
+let recwaiting, polwaiting;
+const marktableind = {fi:0, sv:0, en:0};
+let branches, departments, formats, locations, rules, maplang;
+let imgrand = Math.floor(Math.random() * 100000);
+document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById("kartta-main").style.display = "block";
+    document.getElementById("kartta-branch").style.display = "none";
+    document.getElementById("kartta-rule").style.display = "none";
+    document.getElementById("kartta-department").style.display = "none";
+    document.getElementById("kartta-location").style.display = "none";
+    document.getElementById("kartta-format").style.display = "none";
+
+    document.getElementById("addbranch").addEventListener('submit', function(event){            // add branch
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("addbranch"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+             getSettings();
+        })
+    });
+    document.getElementById("adddep").addEventListener('submit', function(event){               // add department
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("adddep"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+        })
+    });
+    document.getElementById("addfor").addEventListener('submit', function(event){               // add format
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("addfor"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+        })
+    });
+    document.getElementById("addloc").addEventListener('submit', function(event){               // add location
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("addloc"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+        })
+    });
+    document.getElementById("editdep").addEventListener('submit', function(event){              // modify department
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("editdep"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+        })
+    });
+    document.getElementById("editfor").addEventListener('submit', function(event){              // modify format
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("editfor"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+        })
+    });
+    document.getElementById("editloc").addEventListener('submit', function(event){              // modify location
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("editloc"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+        })
+    });
+    document.getElementById("branchform").addEventListener('submit', function(event){           // modify branch
+        event.preventDefault();
+        const fdata = new FormData(document.getElementById("branchform"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            getSettings();
+            setTimeout(() => editBranch(document.getElementById("branchformbranch").value), 500);
+        })
+    });
+    document.getElementById("branchremove").addEventListener('click', function(event){          // remove branch
+        fetch("karttaedit", {
+            method: 'POST',
+            body: new URLSearchParams({formtype: "removebranch", branch: document.getElementById("branchformbranch").value})
+        }).then(function(){
+            getSettings();
+            document.getElementById("kartta-main").style.display = "block";
+            document.getElementById("kartta-branch").style.display = "none";
+        })
+    });
+    document.getElementById("departmentremove").addEventListener('click', function(event){          // remove department
+        fetch("karttaedit", {
+            method: 'POST',
+            body: new URLSearchParams({formtype: "removedep", index: document.getElementById("depformdep").value})
+        }).then(function(){
+            getSettings();
+            document.getElementById("kartta-main").style.display = "block";
+            document.getElementById("kartta-department").style.display = "none";
+        })
+    });
+    document.getElementById("locationremove").addEventListener('click', function(event){          // remove location
+        fetch("karttaedit", {
+            method: 'POST',
+            body: new URLSearchParams({formtype: "removeloc", index: document.getElementById("locformloc").value})
+        }).then(function(){
+            getSettings();
+            document.getElementById("kartta-main").style.display = "block";
+            document.getElementById("kartta-location").style.display = "none";
+        })
+    });
+    document.getElementById("formatremove").addEventListener('click', function(event){          // remove format
+        fetch("karttaedit", {
+            method: 'POST',
+            body: new URLSearchParams({formtype: "removefor", index: document.getElementById("forformfor").value})
+        }).then(function(){
+            getSettings();
+            document.getElementById("kartta-main").style.display = "block";
+            document.getElementById("kartta-format").style.display = "none";
+        })
+    });
+    document.getElementById("moverulesform").addEventListener('submit', function(event){        // move rules
+        event.preventDefault();
+        let ordercont = '[';
+        const orderlist = document.getElementById("sortlist").children;
+        for (let x = 0; x < orderlist.length; x++){
+            ordercont += orderlist[x].getAttribute("data-ind");
+            if (x < orderlist.length - 1) ordercont += ',';
+        }
+        ordercont += ']';
+        document.getElementById("moverulesorder").value = ordercont;
+        
+        const fdata = new FormData(document.getElementById("moverulesform"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+            editBranch(document.getElementById("mrformbranch").value);
+        })
+    });
+    document.getElementById("ruleform").addEventListener('submit', function(event){            // modify rule
+        event.preventDefault();
+        
+        for (let x = 0; x < 3; x++){
+            let lang;
+            if (x == 0) lang = "fi";
+            if (x == 1) lang = "sv";
+            if (x == 2) lang = "en";
+            //{"frm":"p","cors":[2,2,50,50,2,100]}
+            let markcont = '[';
+            const markrows = document.getElementById("marktable" + lang).rows;
+            for (let n = 0; n < markrows.length; n++){
+                markcont += '{"frm":"' + markrows[n].cells[1].innerHTML + '","cors":[';
+                for (let c = 2; c < markrows[n].cells.length; c++){
+                    markcont += markrows[n].cells[c].innerHTML;
+                    if (c < markrows[n].cells.length - 1) markcont += ',';
+                }
+                markcont += ']}';
+                if (n < markrows.length - 1) markcont += ',';
+            }
+            markcont += ']';
+            document.getElementById("rulemarks" + lang).value = markcont;
+        }
+        
+        const fdata = new FormData(document.getElementById("ruleform"));
+        const data = new URLSearchParams(fdata);
+        fetch("karttaedit", {
+            method: 'POST',
+            body: data
+        }).then(function(){
+        })
+    });
+    document.getElementById("mapform").addEventListener('submit', function(event){             // add map
+        event.preventDefault();
+        addMap();
+    });
+    document.getElementById("removemapform").addEventListener('submit', function(event){       // remove map
+        event.preventDefault();
+        if (document.getElementById("branchmaplist").value != "none"){
+            const fdata = new FormData(document.getElementById("removemapform"));
+            const data = new URLSearchParams(fdata);
+            fetch("karttaedit", {
+                method: 'POST',
+                body: data
+            }).then(function(){
+                getSettings();
+                setTimeout(() => editBranch(document.getElementById("removemapbranch").value), 500);
+            })
+        }
+    });
+    
+    document.getElementById("rulemapfi").addEventListener('click', function(event){           // change map language in a rule
+        document.getElementById("rulemapinfo").style.display = "none";
+        maplang = "fi";
+        initMap();
+    });
+    document.getElementById("rulemapsv").addEventListener('click', function(event){
+        document.getElementById("rulemapinfo").style.display = "block";
+        maplang = "sv";
+        initMap();
+    });
+    document.getElementById("rulemapen").addEventListener('click', function(event){
+        document.getElementById("rulemapinfo").style.display = "block";
+        maplang = "en";
+        initMap();
+    });
+
+    getSettings();
+});
+
+function addMap(){
+    const mapfiles = document.getElementById("mapfile").files;
+    if (mapfiles.length > 0){
+        let filename = mapfiles[0].name;
+        let mappostdiv = document.getElementById("mapform-post");
+        mappostdiv.innerHTML = filename;
+        let mbranch = document.getElementById("mapformbranch").value;
+        const fdata = new FormData(document.getElementById("mapform"));
+        let xbranch;
+        let xfound = false;
+        for (let x in branches){
+            if (branches[x].maps.includes(filename)){
+                xbranch = x;
+                xfound = true;
+            }
+        }
+        if (xfound){
+            if (xbranch != mbranch){
+                mappostdiv.innerHTML = "Tiedostonnimi on jo toisella yksiköllä käytössä, ei voi lisätä.";
+            }else{
+                mappostdiv.innerHTML = "Tiedostonnimi on jo tällä yksiköllä käytössä. Korvataanko edellinen?<br>";
+                mappostdiv.innerHTML += "<button type='button' id='addmapyes'>Kyllä</button>&nbsp;&nbsp;&nbsp;&nbsp;<button type='button' id='addmapno'>Ei</button>";
+                document.getElementById("addmapyes").addEventListener('click', function(event){
+                    fetch("karttaedit", {
+                        method: 'POST',
+                        body: fdata
+                    }).then(function(result){
+                        getSettings();
+                        setTimeout(() => editBranch(mbranch), 500);
+                        imgrand = Math.floor(Math.random() * 100000);
+                        //const myHeaders = new Headers();
+                        //myHeaders.append("Content-Type", "image");
+                        //myHeaders.append("Cache-Control", "max-age=0");
+                        //setTimeout(() => fetch(pathim + filename, {headers: myHeaders, cache: "reload"}), 1000);
+                        //setTimeout(() => document.getElementById("mappic").src = pathim + filename + "?" + Math.random(), 1000);
+                        //branches[mbranch].maps.push(filename);
+                        //mappostdiv.innerHTML = filename + " ladattu";
+                    })
+                });
+                document.getElementById("addmapno").addEventListener('click', function(event){
+                    mappostdiv.innerHTML = "";
+                });
+            }
+        }else{
+            fetch("karttaedit", {
+                method: 'POST',
+                body: fdata
+            }).then(function(result){
+                getSettings();
+                setTimeout(() => editBranch(mbranch), 500);
+                //branches[mbranch].maps.push(filename);
+                //mappostdiv.innerHTML = filename + " ladattu";
+            })
+        }
+    }
+}
+            
+function editBranch(branch) {
+    let branchdivpre = document.getElementById("kartta-branch-pre");
+    let branchdivpost = document.getElementById("kartta-branch-post");
+    let rulesdiv = document.getElementById("rules");
+    branchdivpre.innerHTML = "<p>Muokkaa yksikköä:</p>";
+    document.getElementById("kartta-main").style.display = "none";
+    document.getElementById("kartta-branch").style.display = "block";
+    branchdivpost.innerHTML = "<button class='closebranch'>Sulje</button>";
+    rulesdiv.innerHTML = "<br><b>Säännöt<b><br><br>";
+    document.getElementById("mapform-post").innerHTML = "";
+    let maplist = document.getElementById("branchmaplist");
+    
+    document.getElementById("branchformbranch").value = branch;
+    document.getElementById("mapformbranch").value = branch;
+    document.getElementById("removemapbranch").value = branch;
+    document.getElementById("branch-fi").value = branches[branch].fi;
+    document.getElementById("branch-sv").value = branches[branch].sv;
+    document.getElementById("branch-en").value = branches[branch].en;
+    document.getElementById("branch-rule").value = branches[branch].file;
+    document.getElementById("markcolor").value = "#" + (branches[branch].color.r).toString(16) + (branches[branch].color.g).toString(16) + (branches[branch].color.b).toString(16);
+    document.getElementById("marktrans").value = 127 - branches[branch].color.t;
+    document.getElementById("mrformbranchfile").value = branches[branch].file;
+    document.getElementById("mrformbranch").value = branch;
+    
+    maplist.innerHTML = "<option value='none' selected disabled>Valitse tiedosto</option>"; 
+    for (let x in branches[branch].maps){
+        maplist.innerHTML += "<option value='" + x + "'>" + branches[branch].maps[x] + "</option>";
+    }
+    
+    fetch(pathfile + branches[branch].file + ".json", {cache: "no-cache"})
+    .then(function(response){
+        return response.json();
+    }).then(function(result){
+        rules = result;
+        let ind = 0;
+        rulesdiv.innerHTML += "<ul id='sortlist' class='kartta-list'></ul>";
+        for (let x of rules){
+            let depinfo = "", locinfo = "", forinfo = "";
+            for (let n of x.dep){
+                if (Object.keys(departments).includes(n)) depinfo += departments[n].fi + ", ";
+            }
+            for (let n of x.loc){
+                if (Object.keys(locations).includes(n)) locinfo += locations[n].fi + ", ";
+            }
+            for (let n of x.for){
+                if (Object.keys(formats).includes(n)) forinfo += formats[n].fi + ", ";
+            }
+            let itemcontent = "<li class='kartta-item' draggable='true' data-ind='" + ind + "'>"; 
+            itemcontent += "<form class='addrule' style='display: inline;'><input type='hidden' name='formtype' value='addrule'><input type='hidden' name='rule' value='" + ind + "'><input type='hidden' name='branchfile' value='" + branches[branch].file + "'><input style='font-weight: 800;' class='btn' type='submit' value=' + '></form>";
+            itemcontent += (ind + " : " + x.txt.fi + " - " + depinfo + locinfo + forinfo + x.gen + " " + x.cla + " " + x.sig1 + " " + x.sig2).slice(0, 140);
+            itemcontent += " <button class='btn editrule' name='" + ind + "'>Muokkaa</button>";
+            itemcontent += "<form class='removerule' style='display: inline;'><input type='hidden' name='formtype' value='removerule'><input type='hidden' name='rule' value='" + ind + "'><input type='hidden' name='branchfile' value='" + branches[branch].file + "'><input class='btn' type='submit' value='Poista'></form>";
+            itemcontent += "</li>";
+            document.getElementById("sortlist").innerHTML += itemcontent;
+            ind++;
+        }
+        rulesdiv.innerHTML += "<form class='addrule' style='display: inline;'><input type='hidden' name='formtype' value='addrule'><input type='hidden' name='rule' value='" + ind + "'><input type='hidden' name='branchfile' value='" + branches[branch].file + "'><input style='font-weight: 800;' class='btn' type='submit' value=' + '></form> <br>";
+    }).finally(function(){
+        rulesdiv.innerHTML += "<button class='closebranch'>Sulje</button>";
+        const closebuttons = document.getElementsByClassName("closebranch");
+        for (let x of closebuttons){
+            x.addEventListener('click', function(){
+                document.getElementById("kartta-branch").style.display = "none";
+                document.getElementById("kartta-main").style.display = "block";
+            });
+        }
+        // draggable rules
+        const sortlist = document.querySelector(".kartta-list");
+        const items = sortlist.querySelectorAll(".kartta-item");
+        
+        items.forEach(item=>{
+            item.addEventListener("dragstart", () => {
+                setTimeout(() => item.classList.add("dragged"), 0);
+            });
+            item.addEventListener("dragend", () => {
+                item.classList.remove("dragged");
+            });
+        });
+        const initList = (e) => {
+            e.preventDefault();
+            const dragged = sortlist.querySelector(".dragged");
+            if (e.target === dragged.previousSibling){
+                sortlist.insertBefore(dragged, e.target);
+            }else{
+                sortlist.insertBefore(dragged, e.target.nextSibling);
+            }
+        }
+        sortlist.addEventListener("dragover", initList);
+        sortlist.addEventListener("dragenter", e => e.preventDefault());
+        
+        const editbuttons = document.getElementsByClassName("editrule");
+        const removeforms = document.getElementsByClassName("removerule");
+        const addforms = document.getElementsByClassName("addrule");
+        for (let x of editbuttons){
+            x.addEventListener('click', function() {editRule(x.name, branch);});
+        }
+        for (let x of removeforms){
+            x.addEventListener('submit', function(event){
+                event.preventDefault();
+                const fdata = new FormData(x);
+                const data = new URLSearchParams(fdata);
+                fetch("karttaedit", {
+                    method: 'POST',
+                    body: data
+                }).then(function(){
+                    editBranch(branch);
+                })
+            });
+        }
+        for (let x of addforms){
+            x.addEventListener('submit', function(event){
+                event.preventDefault();
+                const fdata = new FormData(x);
+                const data = new URLSearchParams(fdata);
+                fetch("karttaedit", {
+                    method: 'POST',
+                    body: data
+                }).then(function(){
+                    editBranch(branch);
+                })
+            });
+        }
+    })
+}
+
+function editRule(ruleind, branch){
+    let rulediv = document.getElementById("kartta-rule");
+    let ruleprediv = document.getElementById("kartta-rule-pre");
+    let rulepostdiv = document.getElementById("kartta-rule-post");
+    let mapbutdiv = document.getElementById("mapbuttons");
+    let mapinfodiv = document.getElementById("mapinfo");
+    let mapmarksdiv = document.getElementById("mapmarks");
+    let deplist = document.getElementById("deplist");
+    let loclist = document.getElementById("loclist");
+    let forlist = document.getElementById("forlist");
+    ruleprediv.innerHTML = "<p>muokkaa sääntöä nro: " + ruleind + "</p>";
+    document.getElementById("kartta-branch").style.display = "none";
+    rulediv.style.display = "block";
+    let rule = rules[ruleind];
+
+    const sortedlocs = Object.entries(locations).toSorted(function(a, b){
+        let x = a[1].fi.toLowerCase();
+        let y = b[1].fi.toLowerCase();
+        if (x < y) {return -1;}
+        if (x > y) {return 1;}
+        return 0;
+    });
+    deplist.innerHTML = "";
+    forlist.innerHTML = "";
+    loclist.innerHTML = "";
+    for (let x in departments){
+        let depoption = "<option value='" + x + "'";
+        if (rule.dep.includes(x)) depoption += " selected";
+        depoption += ">" + departments[x].fi + "</option>";
+        deplist.innerHTML += depoption;
+    }
+    for (let x in sortedlocs){
+        let locoption = "<option value='" + sortedlocs[x][1].ind + "'";
+        if (rule.loc.includes(sortedlocs[x][1].ind)) locoption += " selected";
+        locoption += ">" + sortedlocs[x][1].fi + "</option>";
+        loclist.innerHTML += locoption;
+    }
+    for (let x in formats){
+        let foroption = "<option value='" + x + "'";
+        if (rule.for.includes(x)) foroption += " selected";
+        foroption += ">" + formats[x].fi + "</option>";
+        forlist.innerHTML += foroption;
+    }
+    
+    document.getElementById("rulemapinfo").style.display = "none";
+    document.getElementById("rulemapinfo").innerHTML = "<p>Jos ruotsin- tai englanninkielelle ei valita pohjapiirrosta, käytetään suomenkielelle valittua piirrosta.<br><button id='bringmarks'>Tuo merkinnät suomenkielisestä</button></p>";
+    document.getElementById("mapselect").innerHTML = "Pohjapiirros:<br><select id='maplistfi' name='mapfi' size='5' form='ruleform'></select><select id='maplistsv' name='mapsv' size='5' form='ruleform'></select><select id='maplisten' name='mapen' size='5' form='ruleform'></select>";
+
+    document.getElementById("ruleformgen").value = rule.gen;
+    document.getElementById("ruleformcla").value = rule.cla;
+    document.getElementById("ruleformsig1").value = rule.sig1;
+    document.getElementById("ruleformsig2").value = rule.sig2;
+    document.getElementById("ruleformtxtfi").value = rule.txt.fi;
+    document.getElementById("ruleformtxtsv").value = rule.txt.sv;
+    document.getElementById("ruleformtxten").value = rule.txt.en;
+    document.getElementById("ruleformbranch").value = branches[branch].file;
+    document.getElementById("ruleformrule").value = ruleind;
+
+    document.getElementById("closerulediv").innerHTML = "<button id='closerule'>Sulje</button>";
+    mapbutdiv.innerHTML = "<br><button id='addrec'>Lisää suorakulmio</button><br><br>";
+    mapbutdiv.innerHTML += "<button id='addpol'>Lisää monikulmio</button><br>";
+    mapinfodiv.innerHTML = "<div id='rectext' style='display: none;'><p>Klikkaa ensin suorakulmion jossain nurkassa ja sitten vastakkaisessa nurkassa</p></div>";
+    mapinfodiv.innerHTML += "<div id='poltext' style='display: none;'><p>Klikkaa järjestyksessä haluamasi alueen jokaisen nurkan kohdalla ja sitten valmis-nappia. Viimeinen piste yhdistyy automaattisesti ensimmäiseen.</p><button id='polfinish'>Valmis</button></div>";
+    mapmarksdiv.innerHTML = "<table id='rptable' style='display: none;'></table>";
+    mapmarksdiv.innerHTML += "<table id='marktablefi' class='karttaedit'></table>";
+    mapmarksdiv.innerHTML += "<table id='marktablesv' class='karttaedit'></table>";
+    mapmarksdiv.innerHTML += "<table id='marktableen' class='karttaedit'></table>";
+    marktableind.fi = 0;
+    marktableind.sv = 0;
+    marktableind.en = 0;
+    
+    document.getElementById("mapimage").innerHTML = "<img id='mappic' src='' style='display:none;'><canvas id='mapcanvas'></canvas>";
+    const canvas = document.getElementById("mapcanvas");
+    const ctx = canvas.getContext("2d");
+    const image = document.getElementById("mappic");
+    
+    for (let x = 0; x < 3; x++){
+        let lang;
+        if (x == 0) lang = "fi";
+        if (x == 1) lang = "sv";
+        if (x == 2) lang = "en";
+        let maplist = document.getElementById("maplist" + lang);
+        if (rule.map[lang] == ""){
+            maplist.innerHTML = "<option selected value=''>Ei valintaa</option>";
+        }else{
+            maplist.innerHTML = "<option value=''>Ei valintaa</option>";
+        }
+        for (let n in branches[branch].maps){
+            let mapoption = "<option value='" + branches[branch].maps[n] + "'";
+            if (rule.map[lang] == branches[branch].maps[n]) mapoption += " selected";
+            mapoption += ">" + branches[branch].maps[n] + "</option>";
+            maplist.innerHTML += mapoption;
+        }
+        maplist.addEventListener('change', () => {
+            rule.map[maplang] = maplist.value;
+            if (maplist.value != ""){
+                image.src = pathim + rule.map[maplang] + "?" + imgrand;
+            }else{
+                image.src = "";
+                canvas.width = 0;
+                canvas.height = 0;
+            }
+        });
+        document.getElementById("marktable" + lang).innerHTML = "";
+        for (let n in rule.marks[lang]){
+            let markrow = "<tr id='marktr" + lang + n + "'><td><button class='btn removemark' name='" + n + "'>Poista</button></td>";
+            markrow += "<td>" + rule.marks[lang][n].frm + "</td>";
+            for (let k = 0; k < rule.marks[lang][n].cors.length; k++){
+                markrow += "<td>" + rule.marks[lang][n].cors[k] + "</td>";
+            }
+            markrow += "</tr>";
+            document.getElementById("marktable" + lang).innerHTML += markrow;
+            marktableind[lang]++;
+        }
+    }
+    maplang = "fi";
+    setMarkremovers(branch, ctx);
+    maplang = "sv";
+    setMarkremovers(branch, ctx);
+    maplang = "en";
+    setMarkremovers(branch, ctx);
+    maplang = "fi";
+    
+    image.addEventListener('load', () => {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        drawMarks(branch, ctx);
+    });
+    document.getElementById("closerule").addEventListener('click', function(){
+        document.getElementById("kartta-rule").style.display = "none";
+        document.getElementById("kartta-branch").style.display = "block";
+        editBranch(branch);
+    });
+    
+    initMap();
+
+    canvas.addEventListener('click', function(event){
+        let x = event.offsetX;
+        let y = event.offsetY;
+        if (recwaiting == 1){
+            document.getElementById("rptable").innerHTML = "<tr><td id='rectabx'>" + x + "</td><td id='rectaby'>" + y + "</td></tr>";
+            recwaiting++;
+        }else if (recwaiting == 2){
+            canvas.style.cursor = "default";
+            recwaiting = 0;
+            document.getElementById("rectext").style.display = "none";
+            let x1 = Number(document.getElementById("rectabx").innerHTML);
+            let y1 = Number(document.getElementById("rectaby").innerHTML);
+            let plusx = (x<x1) ? 1:0;              // corrections because php's draw function will show it that way
+            let plusy = (y<y1) ? 1:0;
+            let plusxs = (x<x1) ? -1:1;
+            let plusys = (y<y1) ? -1:1;
+            console.log((x1+plusx) + " " + (y1+plusy) + " " + (x-x1 + plusxs) + " " + (y-y1 + plusys));
+            ctx.fillRect(x1+plusx, y1+plusy, x-x1 + plusxs, y-y1 + plusys);
+            let rows = marktableind[maplang];
+            let markrow = "<tr id='marktr" + maplang + rows + "'><td><button class='btn removemark' name='" + rows + "'>Poista</button></td>";
+            markrow += "<td>r</td><td>"+x1+"</td><td>"+y1+"</td><td>"+x+"</td><td>"+y+"</td></tr>";
+            document.getElementById("marktable" + maplang).innerHTML += markrow;
+            setMarkremovers(branch, ctx);
+            marktableind[maplang]++;
+        }
+        if (polwaiting){
+            document.getElementById("rptable").innerHTML += "<tr><td id='poltabx" + (polwaiting-1) + "'>" + x + "</td><td id='poltaby" + (polwaiting-1) + "'>" + y + "</td></tr>";
+            polwaiting++;
+        }
+    });
+    document.getElementById("addrec").addEventListener('click', function(){
+        document.getElementById("poltext").style.display = "none";
+        document.getElementById("rectext").style.display = "block";
+        document.getElementById("rptable").innerHTML = "";
+        recwaiting = 1;
+        polwaiting = 0;
+        canvas.style.cursor = "crosshair";
+    });
+    document.getElementById("addpol").addEventListener('click', function(){
+        document.getElementById("rectext").style.display = "none";
+        document.getElementById("poltext").style.display = "block";
+        document.getElementById("rptable").innerHTML = "";
+        polwaiting = 1;
+        recwaiting = 0;
+        canvas.style.cursor = "crosshair";
+    });
+    document.getElementById("polfinish").addEventListener('click', function(){
+        document.getElementById("poltext").style.display = "none";
+        polwaiting = 0;
+        canvas.style.cursor = "default";
+        let rprows = document.getElementById("rptable").rows.length;
+        if (rprows > 2){
+            let rows = marktableind[maplang];
+            let markrow = "<tr id='marktr" + maplang + rows + "'><td><button class='btn removemark' name='" + rows + "'>Poista</button></td><td>p</td>";
+            ctx.beginPath();
+            ctx.moveTo(document.getElementById("poltabx0").innerHTML, document.getElementById("poltaby0").innerHTML);
+            markrow += "<td>" + document.getElementById("poltabx0").innerHTML + "</td>";
+            markrow += "<td>" + document.getElementById("poltaby0").innerHTML + "</td>";
+            for (x = 1; x < rprows; x++){
+                ctx.lineTo(document.getElementById("poltabx" + x).innerHTML, document.getElementById("poltaby" + x).innerHTML);
+                markrow += "<td>" + document.getElementById("poltabx" + x).innerHTML + "</td>";
+                markrow += "<td>" + document.getElementById("poltaby" + x).innerHTML + "</td>";
+            }
+            ctx.closePath();
+            ctx.fill();
+            markrow += "</tr>";
+            document.getElementById("marktable" + maplang).innerHTML += markrow;
+            marktableind[maplang]++;
+            setMarkremovers(branch, ctx);
+        }
+    });
+    document.getElementById("bringmarks").addEventListener('click', function(){
+        marktableind[maplang] = 0;
+        document.getElementById("marktable" + maplang).innerHTML = "";
+        const markrows = document.getElementById("marktablefi").rows;
+        for (let n = 0; n < markrows.length; n++){
+            let markrow = "<tr id='marktr" + maplang + n + "'><td><button class='btn removemark' name='" + n + "'>Poista</button></td>";
+            for (let c = 1; c < markrows[n].cells.length; c++){
+                markrow += "<td>" + markrows[n].cells[c].innerHTML + "</td>";
+            }
+            markrow += "</tr>";
+            document.getElementById("marktable" + maplang).innerHTML += markrow;
+            marktableind[maplang]++;
+        }
+        setMarkremovers(branch, ctx);
+        drawMarks(branch, ctx);
+    });
+}
+
+function initMap(){
+    let maplist = document.getElementById("maplist" + maplang);
+    
+    document.getElementById("rulemapfi").classList.remove("active");
+    document.getElementById("rulemapsv").classList.remove("active");
+    document.getElementById("rulemapen").classList.remove("active");
+    document.getElementById("rulemap" + maplang).classList.add("active");
+    
+    document.getElementById("maplistfi").style.display = "none";
+    document.getElementById("maplistsv").style.display = "none";
+    document.getElementById("maplisten").style.display = "none";
+    document.getElementById("maplist" + maplang).style.display = "block";
+    
+    document.getElementById("marktablefi").style.display = "none";
+    document.getElementById("marktablesv").style.display = "none";
+    document.getElementById("marktableen").style.display = "none";
+    document.getElementById("marktable" + maplang).style.display = "table";
+    
+    if (maplist.value == ""){
+        document.getElementById("mapcanvas").width = 0;
+        document.getElementById("mapcanvas").height = 0;
+    }else{
+        document.getElementById("mappic").src = pathim + maplist.value + "?" + imgrand;
+    }
+}
+
+function setMarkremovers(branch, ctx){
+    const removebuttons = document.getElementById("marktable" + maplang).getElementsByClassName("removemark");
+    for (let x of removebuttons){
+        x.addEventListener('click', function() {
+            //console.log(x.name);
+            let ind = document.getElementById("marktr" + maplang + x.name).rowIndex;
+            document.getElementById("marktable" + maplang).deleteRow(ind);
+            drawMarks(branch, ctx);
+        });
+    }
+}
+
+function drawMarks(branch, ctx){
+    ctx.drawImage(document.getElementById("mappic"), 0, 0);
+    ctx.fillStyle = "rgb(" + branches[branch].color.r + " " + branches[branch].color.g + " " + branches[branch].color.b + " / " + (1 - branches[branch].color.t/127) + ")";
+    const markrows = document.getElementById("marktable" + maplang).rows;
+    for (let n = 0; n < markrows.length; n++){
+        let frm = markrows[n].cells[1].innerHTML;
+        if (frm == 'r'){
+            let x1 = Number(markrows[n].cells[2].innerHTML);
+            let y1 = Number(markrows[n].cells[3].innerHTML);
+            let x2 = Number(markrows[n].cells[4].innerHTML);
+            let y2 = Number(markrows[n].cells[5].innerHTML);
+            let plusx = (x2<x1) ? 1:0;              // corrections because php's draw function will show it that way
+            let plusy = (y2<y1) ? 1:0;
+            let plusxs = (x2<x1) ? -1:1;
+            let plusys = (y2<y1) ? -1:1;
+            ctx.fillRect(x1+plusx, y1+plusy, x2-x1 + plusxs, y2-y1 + plusys);
+        }
+        if (frm == 'p'){
+            ctx.beginPath();
+            ctx.moveTo(markrows[n].cells[2].innerHTML, markrows[n].cells[3].innerHTML);
+            for (let c = 2; c < markrows[n].cells.length; c += 2){
+                ctx.lineTo(markrows[n].cells[c].innerHTML, markrows[n].cells[c+1].innerHTML);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+    }
+}
+
+function getSettings(){
+    let branchesdiv = document.getElementById("branches");
+    branchesdiv.innerHTML = "";
+    let depsdiv = document.getElementById("departments");
+    depsdiv.innerHTML = "";
+    let forsdiv = document.getElementById("formats");
+    forsdiv.innerHTML = "";
+    let locsdiv = document.getElementById("locations");
+    locsdiv.innerHTML = "";
+    fetch(pathfile + "settings.json", {cache: "no-cache"})
+    .then(function(response){
+        return response.json();
+    }).then(function(data){
+        let settings = data;
+        
+        branches = settings.kirjastot;
+        for (let x in branches){
+            branchesdiv.innerHTML += "<i>fi:</i> " + branches[x].fi + " <i>sv:</i> " + branches[x].sv + " <i>en:</i> " + branches[x].en + " sääntöryhmä: " + branches[x].file + " <button class='btn editbranch' name='" + x + "'>Muokkaa</button> <br>";
+        }
+        const braeditbuttons = document.getElementsByClassName("editbranch");
+        for (let x of braeditbuttons){
+            x.addEventListener('click', function() {editBranch(x.name);});
+        }
+
+        departments = settings.osastot;
+        for (let x in departments){
+            depsdiv.innerHTML += x + " : <i>fi:</i> " + departments[x].fi + " <i>sv:</i> " + departments[x].sv + " <i>en:</i> " + departments[x].en + " <button class='btn editdep' name='" + x + "'>Muokkaa</button><br>"; // <form class='removedep' style='display: inline;'><input type='hidden' name='formtype' value='removedep'><input type='hidden' name='department' value='" + x + "'><input class='btn' type='submit' value='Poista'></form>
+        }
+        const depeditbuttons = document.getElementsByClassName("editdep");
+        for (let x of depeditbuttons){
+            x.addEventListener('click', function() {editDep(x.name);});
+        }
+
+        formats = settings.aineistolajit;
+        for (let x in formats){
+            forsdiv.innerHTML += x + " : <i>fi:</i> " + formats[x].fi + " <i>sv:</i> " + formats[x].sv + " <i>en:</i> " + formats[x].en + " <button class='btn editfor' name='" + x + "'>Muokkaa</button><br>"; // <form class='removedep' style='display: inline;'><input type='hidden' name='formtype' value='removedep'><input type='hidden' name='department' value='" + x + "'><input class='btn' type='submit' value='Poista'></form>
+        }
+        const foreditbuttons = document.getElementsByClassName("editfor");
+        for (let x of foreditbuttons){
+            x.addEventListener('click', function() {editFor(x.name);});
+        }
+
+        locations = settings.sijainnit;
+        for (let x in locations){
+            locsdiv.innerHTML += x + " : <i>fi:</i> " + locations[x].fi + " <i>sv:</i> " + locations[x].sv + " <i>en:</i> " + locations[x].en + " <button class='btn editloc' name='" + x + "'>Muokkaa</button><br>"; // <form class='removeloc' style='display: inline;'><input type='hidden' name='formtype' value='removeloc'><input type='hidden' name='location' value='" + x + "'><input class='btn' type='submit' value='Poista'></form>
+        }
+        const loceditbuttons = document.getElementsByClassName("editloc");
+        for (let x of loceditbuttons){
+            x.addEventListener('click', function() {editLoc(x.name);});
+        }
+    })
+}
+
+function editDep(department){
+    document.getElementById("kartta-department-pre").innerHTML = "<p>Muokkaa osastoa:</p>";
+    document.getElementById("kartta-main").style.display = "none";
+    document.getElementById("kartta-department").style.display = "block";
+    document.getElementById("depformdep").value = department;
+    document.getElementById("dep-fi").value = departments[department].fi;
+    document.getElementById("dep-sv").value = departments[department].sv;
+    document.getElementById("dep-en").value = departments[department].en;
+    document.getElementById("kartta-department-post").innerHTML = "<br><br><button id='closedepartment'>Sulje</button><br>";
+    document.getElementById("closedepartment").addEventListener('click', function(){
+        document.getElementById("kartta-department").style.display = "none";
+        document.getElementById("kartta-main").style.display = "block";
+    });
+}
+function editFor(format){
+    document.getElementById("kartta-format-pre").innerHTML = "<p>Muokkaa aineistolajia:</p>";
+    document.getElementById("kartta-main").style.display = "none";
+    document.getElementById("kartta-format").style.display = "block";
+    document.getElementById("forformfor").value = format;
+    document.getElementById("for-fi").value = formats[format].fi;
+    document.getElementById("for-sv").value = formats[format].sv;
+    document.getElementById("for-en").value = formats[format].en;
+    document.getElementById("kartta-format-post").innerHTML = "<br><br><button id='closeformat'>Sulje</button><br>";
+    document.getElementById("closeformat").addEventListener('click', function(){
+        document.getElementById("kartta-format").style.display = "none";
+        document.getElementById("kartta-main").style.display = "block";
+    });
+}
+function editLoc(location){
+    document.getElementById("kartta-location-pre").innerHTML = "<p>Muokkaa sijaintia:</p>";
+    document.getElementById("kartta-main").style.display = "none";
+    document.getElementById("kartta-location").style.display = "block";
+    document.getElementById("locformloc").value = location;
+    document.getElementById("loc-fi").value = locations[location].fi;
+    document.getElementById("loc-sv").value = locations[location].sv;
+    document.getElementById("loc-en").value = locations[location].en;
+    document.getElementById("kartta-location-post").innerHTML = "<br><br><button id='closelocation'>Sulje</button><br>";
+    document.getElementById("closelocation").addEventListener('click', function(){
+        document.getElementById("kartta-location").style.display = "none";
+        document.getElementById("kartta-main").style.display = "block";
+    });
+}
+JS;
+echo $this->assetManager()->outputInlineScriptString($script);
+?>
