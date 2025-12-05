@@ -28,7 +28,7 @@ tällä:
 5. Lisää tiedoston LocationService.ini sisältö näkymäsi tiedostoon  
 local/config/vufind/LocationService.ini
 
-##Editointi
+## Editointi
 
 Mene osoitteeseen organisaatio.finna-pre.fi/content/karttaedit  
 Kirjoita salana ja kirjaudu sisään.
