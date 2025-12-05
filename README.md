@@ -7,11 +7,11 @@ Ennen vaihetta 5., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohda
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon themes/custom/templates/content  
 Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.  
 kartta.phtml:  
-&nbsp;&nbsp;riveillä 13 ja 14 korvaa replace/replace muodossa organisaatio/näkymän nimi (näet ne mm. tiedostonhallinnan kansiorakenteesta)  
+&nbsp;&nbsp;riveillä 18 ja 19 korvaa replace/replace muodossa organisaatio/näkymän nimi (näet ne mm. tiedostonhallinnan kansiorakenteesta)  
 karttaedit.phtml:  
-&nbsp;&nbsp;riveillä 4 ja 5 korvaa replace/replace muodossa organisaatio/näkymän nimi  
-&nbsp;&nbsp;riveillä 904 ja 905 korvaa replace näkymän nimellä  
-Lisää karttaedit.phtml:ssä riville 11 valitsemasi salasanan hash. 
+&nbsp;&nbsp;riveillä 9 ja 10 korvaa replace/replace muodossa organisaatio/näkymän nimi  
+&nbsp;&nbsp;riveillä 909 ja 910 korvaa replace näkymän nimellä  
+Lisää karttaedit.phtml:ssä riville 16 valitsemasi salasanan hash. 
 
 3. Lisää tiedoston kartta.js sisältö joko näkymäsi tiedostoon themes/custom/js/custom.js  
 tai lisää se uutena javascript-tiedostona ja lisää siitä tieto tiedostoon themes/custom/theme.config.php  
