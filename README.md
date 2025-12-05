@@ -5,11 +5,11 @@
 Ennen vaihetta 5., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohdassa kuvatulla tavalla kirjastojen aineistojen sijaintitietoja.  
 
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon
-themes/custom/templates/content
-Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.
-kartta.phtml:
+themes/custom/templates/content  
+Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.  
+kartta.phtml:  
  - riveillä 13 ja 14 korvaa replace/replace muodossa organisaatio/näkymän nimi (näet ne mm. tiedostonhallinnan kansiorakenteesta)
-kartta.phtml:
+kartta.phtml:  
  - riveillä 4 ja 5 korvaa replace/replace muodossa organisaatio/näkymän nimi  
  - riveillä 904 ja 905 korvaa replace näkymän nimellä  
 Lisää riville 11 valitsemasi salasanan hash. 
