@@ -1,0 +1,21 @@
+<?php
+$formtype = "";
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $formtype = $_POST["formtype"];
+}
+if ($formtype == "newpassword"){
+    $password = $_POST["newpassword"];
+    $hashedpassword = password_hash($password, PASSWORD_BCRYPT);
+}
+?>
+
+<form method="post" action="pw">
+    <input type="hidden" name="formtype" value="newpassword">
+    <label for="newpassword">Salasana:</label>
+    <input type="text" id="newpassword" name="newpassword">
+    <input class="btn btn-primary" type="submit" value="Muunna">
+</form>
+
+<?php if ($formtype == "newpassword"): ?>
+    <p>Salasana hashkoodattuna: <?=$hashedpassword?></p>
+<?php endif; ?>
