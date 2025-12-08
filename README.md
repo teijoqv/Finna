@@ -7,11 +7,11 @@ Ennen vaihetta 5., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohda
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon themes/custom/templates/content  
 Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.  
 kartta.phtml:  
-&nbsp;&nbsp;riveillä 18 ja 19 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_ (näet ne mm. tiedostonhallinnan kansiorakenteesta)  
+&nbsp;-&nbsp;riveillä 18 ja 19 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_ (näet ne mm. tiedostonhallinnan kansiorakenteesta)  
 karttaedit.phtml:  
-&nbsp;&nbsp;riveillä 9 ja 10 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_  
-&nbsp;&nbsp;riveillä 909 ja 910 korvaa replace näkymän nimellä  
-Lisää karttaedit.phtml:ssä riville 16 lainausmerkkien sisään valitsemasi salasana hashkoodattuna. Voit selvittää salasanan hashkoodin esim. täältä löytyvällä pw.phtml-tiedostolla (lisää se näkymäsi content-kansioon ja mene sitten sivulle normaaliin tapaan). Toiminnossa ei siis ole erillisiä käyttäjätunnuksia, mutta se olisi ainakin jonkinlaisena mahdollista toteuttaa pienin lisäyksin.
+&nbsp;-&nbsp;riveillä 9 ja 10 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_  
+&nbsp;-&nbsp;riveillä 909 ja 910 korvaa replace näkymän nimellä  
+Lisää karttaedit.phtml:ssä riville 16 lainausmerkkien sisään valitsemasi salasana hashkoodattuna. Voit selvittää hashkoodin esim. täältä löytyvällä pw.phtml-tiedostolla (lisää se näkymäsi content-kansioon ja mene sitten sivulle: _organisaatio_.finna-pre.fi/content/pw ja kopioi sieltä saatu koodi). Toiminnossa ei siis ole erillisiä käyttäjätunnuksia, mutta se olisi ainakin jonkinlaisena mahdollista toteuttaa ilman suuria muutoksia.
 
 2. Lisää tiedoston kartta.js sisältö joko näkymäsi tiedostoon themes/custom/js/custom.js  
 tai lisää se uutena javascript-tiedostona ja lisää siitä tieto tiedostoon themes/custom/theme.config.php  
@@ -28,6 +28,9 @@ tällä:
 ```
 <a class="location-service" data-lightbox href="<?=$this->locationServiceUrl ?>"><?=$this->icon('location-service', 'location-service-icon') ?> <?=$this->transEsc($this->callnumber)?></a>
 ```
+
+5. Lisää käännöstekstit näkymääsi tiedostosta käännökset.txt
+Voit muutella tekstejä haluamaasi muotoon.
 
 6. Lisää tiedoston LocationService.ini sisältö näkymäsi tiedostoon  
 local/config/vufind/LocationService.ini
