@@ -1,4 +1,5 @@
-Lisää alla olevat käännökset näkymääsi. Ensimmisenä on käännöksen koodi ja sitten tekstit englanniksi, suomeksi ja ruotsiksi. Voit toki muutella sisältöä, nämä eivät meilläkään välttämättä pysy tällaisina. Tooltippejä käytetään editorissa ja ne ovat vain suomeksi.
+Lisää alla olevat käännökset näkymääsi. Ensimmäisenä on käännöksen koodi ja sitten tekstit englanniksi, suomeksi ja ruotsiksi. Voit toki muutella sisältöä, nämä eivät meilläkään välttämättä pysy tällaisina.
+Tooltipit näkyvät editorissa ja ne ovat vain suomeksi.
 
 kartta_ei_aineistoa
 No location information was found for this material.
