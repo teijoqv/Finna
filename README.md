@@ -2,7 +2,7 @@
 
 ## Käyttöönotto
 
-Ennen vaihetta 5., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohdassa kuvatulla tavalla kirjastojen aineistojen sijaintitietoja.  
+Ennen vaihetta 6., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohdassa kuvatulla tavalla kirjastojen aineistojen sijaintitietoja.  
 
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon themes/custom/templates/content  
 Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.  
@@ -29,7 +29,7 @@ tällä:
 <a class="location-service" data-lightbox href="<?=$this->locationServiceUrl ?>"><?=$this->icon('location-service', 'location-service-icon') ?> <?=$this->transEsc($this->callnumber)?></a>
 ```
 
-5. Lisää käännöstekstit näkymääsi tiedostosta käännökset.txt
+5. Lisää käännöstekstit näkymääsi tiedostosta kaannokset.txt  
 Voit muutella tekstejä haluamaasi muotoon.
 
 6. Lisää tiedoston LocationService.ini sisältö näkymäsi tiedostoon  
