@@ -1,0 +1,57 @@
+Lisää alla olevat käännökset näkymääsi. Ensimmisenä on käännöksen koodi ja sitten tekstit englanniksi, suomeksi ja ruotsiksi. Voit toki muutella sisältöä, nämä eivät meilläkään välttämättä pysy tällaisina. Tooltippejä käytetään editorissa ja ne ovat vain suomeksi.
+
+kartta_ei_aineistoa
+No location information was found for this material.
+Tälle aineistolle ei löytynyt sijaintitietoa.
+Ingen platsinformation hittades för detta material.
+
+kartta_ei_kirjastoa
+There is no location information for this library.
+Tälle kirjastolle ei ole sijaintitietoja.
+Det finns ingen platsinformation för detta bibliotek.
+
+kartta_info
+The actual location may differ for various reasons: the work could be on loan, reserved, or still being acquired. It may also be on a display table, on a new items shelf, or in another unusual location. Especially new items may still have incomplete information about the work, and there can be other errors in the information, which may result in the wrong location being shown.
+Todellinen sijainti saattaa poiketa esitetystä: teos voi olla lainassa, varattuna tai vasta hankinnassa. Se voi myös olla esim. esittelypöydällä, uutuushyllyssä tai muussa poikkeavassa paikassa. Uutuuksissa voi olla vielä vajaat teostiedot ja muutenkin tiedoissa voi olla virheellisyyttä, jolloin teokselle saatetaan näyttää väärä sijainti.
+Den faktiska platsen kan skilja sig av olika anledningar: verket kan vara utlånat, reserverat eller nyligen förvärvat. Det kan också finnas på ett visningsbord, på en hylla med nya föremål eller på en annan ovanlig plats. Särskilt nya föremål kan fortfarande ha ofullständig information om verket, och det kan finnas andra fel i informationen, vilket kan resultera i att fel plats visas för verket.
+
+kartta_otsikko
+Location of the item in the library
+Teoksen sijainti kirjastossa
+Verkets placering i biblioteket
+
+tooltip_kartta_aineistolaji
+Ctrl-nappi pohjassa voi valita useita. <br> Kirjaa ei monessa tilanteessa kannata valita, koska siten saattaisi varsinkin tietokirjallisuudessa rajata haluamattaan pois aineistoa, joka kuuluu alueelle, esim. opinnäytteet, moniviestimet jne. Sen sijaan voi ennen sitä tehdä sääntöjä, jotka sijoittavat muita aineistolajeja omiin paikkoihinsa, esim. DVD:t, BluRayt, äänikirjat, nuotit jne., ja sitten tekee säännön ilman aineistolajirajausta, jolloin myös kirjat tulevat siihen.
+
+tooltip_kartta_aineistolajit
+Aineistolajien nimien täytyy vastata sitä, mitä Finnaan on asetettu. Ne voi tarkistaa Finnassa hakutuloksista.
+
+tooltip_kartta_genre
+Katkaisumerkkinä on *. Pilkulla erottaen voi antaa useita genrejä. Esim.:<br>2 viikon laina*<br>joulu*<br>jännitys, dekkarit
+
+tooltip_kartta_luokka
+Katkaisumerkkinä on *, jolla mukaan tulee kaikki merkinnällä alkavat luokat. Väliviivalla voi merkitä luokkavälejä. Voit merkitä useita luokkia pilkulla erottaen. Esimerkkejä: <br>86.2* <br>52-65*<br> Tietokirjaluokat musiikkia lukuun ottamatta: <br>0-77*, 79*, 86-9* <br>Esim. suomalaiseen kertomakirjallisuuteen rajattaessa täytyy ottaa huomioon, että merkinnällä 84.2* mukaan tulisi myös esim. vironkieliset (84.23). Sen sijaan voi merkitä: <br>84.2, 84.20* (ja luultavasti lisäksi: , 80.2, 80.20*)
+
+tooltip_kartta_osasto
+Ctrl-nappi pohjassa voi valita useita ja poistaa viimeisenkin valitun.
+
+tooltip_kartta_osastot
+Osastojen nimien täytyy vastata sitä, mitä kirjastojärjestelmään on asetettu.
+
+tooltip_kartta_saannot
+Säännöt käydään läpi järjestyksessä alusta loppuun ja ensimmäinen tärppäävä määrittää näytettävän paikkatiedon. Mieti siis missä järjestyksessä niiden täytyy olla, jotta saat halutun lopputuloksen. Poikkeukset yleensä ensin, esim. äänikirjat, jännitys ja sitten vasta muu kertomakirjallisuus. Jos varasto on sellainen, että asiakkaat eivät sinne pääse, kannattaa sille tehdä sääntö ensimmäiseksi ja siinä ilmoittaa, että kysy henkilökunnalta tms.
+
+tooltip_kartta_saanto
+Anna sääntöryhmälle sellainen nimi, joka perustuu yksikön nimelle, esim. hyvinkaapaa (voi käyttää kyllä ääkkösiäkin), jotta ei vahingossa käytettäisi eri yksiköissä samaa nimeä. Nimen vaihtamalla voi aloittaa uuden sääntöryhmän laatimisen. Vaikka yksikön poistaisi tai muuttaisi tähän toisen nimen, säilyvät tiedot vanhassakin sääntöryhmässä, joten sen voi ottaa uudestaan käyttöön vaihtamalla sen nimen tähän.
+
+tooltip_kartta_sijainnit
+Sijaintien nimien täytyy vastata sitä, mitä kirjastojärjestelmään on asetettu.
+
+tooltip_kartta_sijainti
+Ctrl-nappi pohjassa voi valita useita ja poistaa viimeisenkin valitun.
+
+tooltip_kartta_teksti
+Seliteteksti näytetään karttatiedoissa ennen pohjapiirrosta. Jos ruotsi tai englanti ovat tyhjiä, näytetään Finnaa niillä kielillä käytettäessä suomenkielinen teksti. Jos haluat, että ruotsin- tai englanninkielellä ei näytetä selitetekstiä ollenkaan (vaikka suomeksi olisi teksti), merkitse niille tähän välilyönti.
+
+tooltip_kartta_yksikot
+Yksikön nimen (eri kielineen) täytyy vastata sitä, mitä kirjastojärjestelmässä on asetettu. Anna sääntöryhmälle sellainen nimi, joka perustuu yksikön nimelle, esim. hyvinkaapaa (voi käyttää kyllä ääkkösiäkin), jotta ei vahingossa käytettäisi eri yksiköissä samaa nimeä.
