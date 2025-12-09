@@ -19,6 +19,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $password = htmlspecialchars($_POST["password"]);
         if (password_verify($password, $hashedpassword)){
             $_SESSION["karttaeditpw"] = "approved";
+            if (!is_dir(PATHFILE)){
+                mkdir(PATHFILE);       
+            }
+            if (!is_dir(PATHIMAGE)){
+                mkdir(PATHIMAGE);       
+            }
         }else{
             usleep(2000000);
             echo '<form method="post" action="karttaedit">
