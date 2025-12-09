@@ -7,7 +7,7 @@ Viimeistään ennen vaihetta 6., jolla toiminto asetetaan käyttöön, muokkaa E
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon themes/custom/templates/content  
 Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.  
 kartta.phtml:  
-&nbsp;-&nbsp;riveillä 18 ja 19 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_ (näet ne mm. tiedostonhallinnan kansiorakenteesta)  
+&nbsp;-&nbsp;riveillä 19 ja 20 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_ (näet ne mm. tiedostonhallinnan kansiorakenteesta)  
 karttaedit.phtml:  
 &nbsp;-&nbsp;riveillä 9 ja 10 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_  
 &nbsp;-&nbsp;riveillä 915 ja 916 korvaa replace näkymän nimellä  
