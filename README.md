@@ -2,7 +2,7 @@
 
 ## Käyttöönotto
 
-Ennen vaihetta 6., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohdassa kuvatulla tavalla kirjastojen aineistojen sijaintitietoja.  
+Viimeistään ennen vaihetta 6., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohdassa kuvatulla tavalla kirjastojen aineistojen sijaintitietoja.  
 
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon themes/custom/templates/content  
 Muuta tiedostopolut tiedostoissa vastaamaan omaa näkymääsi.  
@@ -38,9 +38,13 @@ local/config/vufind/LocationService.ini
 ## Editointi
 
 Mene osoitteeseen _organisaatio_.finna-pre.fi/content/karttaedit  
-Kirjoita salana ja kirjaudu sisään.
+Kirjoita salasana ja kirjaudu sisään.
 
-Lisää aukeavalla sivulla kirjastoyksiköitä, osastoja, aineistolajeja ja sijainteja. Yksiköiden, osastojen ja sijaintien eri kielineen täytyy olla kirjoitettuna samassa muodossa kuin kirjastojärjestelmässä. Aineistolajien täytyy olla samassa muodossa kuin Finnassa on teostiedoissa. Hakurajaimessa näkyy sellaisiakin termejä, joita teoksilla itsellään ei ole - esim. aineistolajia videopeli ei teoksilla ole, vaan sen sijaan PlayStation jne. Videopelien osalta kannaattakin lisätä esim. aineistolajit Nintendo, PlayStation ja Xbox ja käyttää niitä aineiston sijoittelun määrittämiseen. Koodi toimii niin, että jos aineistolajin tarkemmassa muodossa on välilyönti määritetyn nimen jälkeen, esim. "PlayStation 5", otetaan se mukaan määritykseen. Jos väliyöntiä ei ole, esim. "CD-äänikirja", ei se tule mukaan aineistolajin "CD" määritykseen. Siten erityisesti videopelit saa yksinkertaisemmin määritettyä, mutta äänikirjat eivät mene CD:en kanssa sekaisin.
+Lisää aukeavalla sivulla kirjastoyksiköitä, osastoja, aineistolajeja ja sijainteja. Yksiköiden, osastojen ja sijaintien eri kielineen täytyy olla kirjoitettuna samassa muodossa kuin kirjastojärjestelmässä. Aineistolajien täytyy olla samassa muodossa kuin Finnassa on teostiedoissa. Hakurajaimessa näkyy sellaisiakin termejä, joita teoksilla itsellään ei ole - esim. aineistolajia videopeli ei teoksilla ole, vaan sen sijaan PlayStation jne. Videopelien osalta kannaattakin lisätä esim. aineistolajit Nintendo, PlayStation ja Xbox ja käyttää niitä aineiston sijoittelun määrittämiseen. Koodi toimii niin, että jos aineistolajin tarkemmassa muodossa on välilyönti määritetyn nimen jälkeen, esim. "PlayStation 5", otetaan se mukaan määritykseen. Jos välilyöntiä ei ole, esim. "CD-äänikirja", ei se tule mukaan aineistolajin "CD" määritykseen. Siten erityisesti videopelit saa yksinkertaisemmin määritettyä ja toisaalta äänikirjat eivät mene CD:iden kanssa sekaisin.
 
-Anna kirjastoyksiköille lisäksi sääntöryhmän nimi. Sen kannattaa perustua jotenkin kirjaston nimeen, jottei eri yksiköille vahingossa käytettäisi samaa, mutta muuten sillä ei ole väliä. Jos sääntöryhmän nimen vaihtaa myöhemmin, jää vanhat asetukset muistiin vanhan nimen alle, mitä voi hyödyntää esim. testatessa tai poikkeavia väliaikaisia sääntöjä luodessa.
+Anna kirjastoyksiköille lisäksi sääntöryhmän nimi. Sen kannattaa perustua jotenkin kirjaston nimeen, jottei eri yksiköille vahingossa käytettäisi samaa, mutta muuten sillä ei ole väliä. Jos sääntöryhmän nimen vaihtaa myöhemmin, jäävät vanhat asetukset muistiin vanhan nimen alle, mitä voi hyödyntää esim. testatessa tai poikkeavia väliaikaisia sääntöjä luodessa, koska ennestään määritetyt säännöt saa takaisin vaihtamalla vanhaan sääntöryhmän nimeen.
+
+Yksikön muokkaustilassa voit lisätä pohjapiirroksia klikkaamalla ensin nappia "Valitse tiedosto" ja valinnan jälkeen nappia "Lataa". Plus-merkillä saa lisättyä sääntöjä. Säännöt käydään läpi ylhäältä alaspäin ja ensimmäistä tärppäävää käytetään sijainnin ilmoittamiseen, joten järjestys täytyy sen mukaisesti suunnitella niin, että saadaan haluttu lopputulos. Lisäksi voi muokata yksikön ja sääntöryhmän nimiä, valita värin ja sen peittävyyden paikkamerkinnöille sekä poistaa lisättyjä pohjapiirroksia.
+
+Säännön muokkaustilassa aseta halutut ehdot kyseiselle aineistolle. Listoista voi valita useita vaihtoehtoja (tai poistaa viimeisenkin) Ctrl-nappi pohjassa. Kirjoitetut selitetekstit näkyvät asiakkaalle pohjapiirroksen (jos sellainen on valittu) yläpuolella. Jos muilta kieliltä jättää tekstin pois, näytetään niille suomenkielinen teksti (jos sellainenkaan on annettu), ellei kyseiselle kielelle kirjoita laatikkoon välilyöntiä. Pohjapiirros valitaan listasta. Sen voi myös jättää valitsematta, jos aineisto esim. on sellaisessa paikassa, johon asiakkaat eivät pääse. Eri kielille voi valita oman pohjapiirroksensa, jos ne esim. sisältävät tekstiä ja niistä on omat versiot eri kielille. Jos niille ei erikseen valitse pohjapiirrosta, käytetään suomenkielelle valittua. Jos kuvat ovat eri kielille saman kokoiset ja samalla tavalla asemoidut, saa suomenkieliselle tehdyt merkinnät kopioitua suoraan paikoilleen klikkaamalla "Tuo merkinnät suomenkielisestä" -nappia. 
 
