@@ -1,0 +1,147 @@
+<?php
+
+/*
+ * @author   Teijo Virolainen <teijo.virolainen@hyvinkaa.fi>
+ */
+
+$this->headTitle('Kirjastokartta'); ?>
+<h2 class="modaaliotsikko"><?=$this->translate('kartta_otsikko')?></h2>
+<div class="kartta-tulos">
+<?php 
+// loc={location}&bra={branch}&dep={department}&cal={callno}&lan={lang}&own={owner}&format=js
+$params = array();
+parse_str($_SERVER['QUERY_STRING'], $params);
+$param_bra = array_key_exists('bra', $params) ? htmlspecialchars($params['bra']) : "";
+$param_dep = array_key_exists('dep', $params) ? htmlspecialchars($params['dep']) : "";
+$param_cal = array_key_exists('cal', $params) ? htmlspecialchars($params['cal']) : "";
+$param_lan = array_key_exists('lan', $params) ? htmlspecialchars($params['lan']) : "fi";
+$param_for = array_key_exists('format', $params) ? trim(htmlspecialchars($params['format'])) : "";
+$path = "/data/vufind2-views/replace/replace/themes/custom/files/kirjastokartta/";
+$pathim = "/data/vufind2-views/replace/replace/themes/custom/images/kirjastokartta/";
+$param_deps = explode(',', $param_dep);
+$dep = trim($param_deps[0]);
+$loc = "";
+if (count($param_deps) > 1){
+    $loc = trim($param_deps[1]);
+}
+if ($param_lan != "fi" && $param_lan != "sv" && $param_lan != "en") $param_lan = "fi";
+
+$settingsfile = fopen($path."settings.json", "r");
+if ($settingsfile){
+    $settingsjson = fread($settingsfile,filesize($path."settings.json"));
+    $settings = json_decode($settingsjson, true);
+    fclose($settingsfile);
+    $depind = "";
+    $locind = "";
+    $forind = "";
+    if ($dep != ""){
+        foreach ($settings["osastot"] as $department){
+            if ($department[$param_lan] == $dep){
+                $depind = $department["ind"];
+            }
+        }
+    }
+    if ($loc != ""){
+        foreach ($settings["sijainnit"] as $location){
+            if ($location[$param_lan] == $loc){
+                $locind = $location["ind"];
+            }
+        }
+    }
+    if ($param_for != ""){
+        foreach ($settings["aineistolajit"] as $format){
+            if (strpos($param_for, $format[$param_lan].' ') === 0 || $format[$param_lan] == $param_for){
+                $forind = $format["ind"];
+            }
+        }
+    }
+    $found = false;
+    foreach ($settings["kirjastot"] as $branch){
+        if (strpos($branch[$param_lan], $param_bra) === 0){
+            $found = true;
+            $rulefile = fopen($path.$branch["file"].".json", "r");
+            if ($rulefile){
+                $rulejson = fread($rulefile,filesize($path.$branch["file"].".json"));
+                $rules = json_decode($rulejson, true);
+                fclose($rulefile);
+                $match = false;
+                foreach ($rules as $rule){
+                    if (preg_match($rule["depreg"], $depind) && preg_match($rule["locreg"], $locind) && preg_match($rule["calreg"], $param_cal) && preg_match($rule["forreg"], $forind)){
+                        if ($rule["txt"][$param_lan] != ""){
+                            echo "<p>".$rule["txt"][$param_lan]."</p>";
+                        }else{
+                            echo "<p>".$rule["txt"]["fi"]."</p>";
+                        }
+                        $mapfile = "";
+                        $maplang = "fi";
+                        if (array_key_exists($param_lan, $rule["map"])){
+                            $mapfile = $rule["map"][$param_lan];
+                            $maplang = $param_lan;
+                            if (!file_exists($pathim.$mapfile)){
+                                $mapfile = "";
+                            }
+                        }
+                        if ($mapfile == ""){
+                            if (array_key_exists("fi", $rule["map"])){
+                                $mapfile = $rule["map"]["fi"];
+                                $maplang = "fi";
+                            }
+                        }
+                        if ($mapfile != ""){
+                            if (file_exists($pathim.$mapfile)){
+                                $im;
+                                $iminfo = getimagesize($pathim.$mapfile);
+                                switch($iminfo[2]){
+                                    case IMAGETYPE_PNG:
+                                        $im = imagecreatefrompng($pathim.$mapfile);
+                                        break;
+                                    case IMAGETYPE_JPEG:
+                                        $im = imagecreatefromjpeg($pathim.$mapfile);
+                                        break;
+                                    case IMAGETYPE_GIF:
+                                        $im = imagecreatefromgif($pathim.$mapfile);
+                                }
+                                if ($im){
+                                    $color = imagecolorallocatealpha($im, $branch["color"]["r"], $branch["color"]["g"], $branch["color"]["b"], $branch["color"]["t"]);
+                                    $markings = array();
+                                    if (array_key_exists($maplang, $rule["marks"])){
+                                        $markings = $rule["marks"][$maplang];
+                                    }
+                                    foreach ($markings as $mark){
+                                        if ($mark["frm"]=="r"){
+                                            imagefilledrectangle($im, $mark["cors"][0], $mark["cors"][1], $mark["cors"][2], $mark["cors"][3], $color);
+                                        }
+                                        if ($mark["frm"]=="p"){
+                                            imagefilledpolygon($im, $mark["cors"], $color);
+                                        }
+                                    }
+                                    ob_start();
+                                    imagepng($im);
+                                    $ImageData=ob_get_contents();
+                                    ob_end_clean();
+                                    echo '<img src="data:image/png;base64,'.base64_encode($ImageData).'">';
+                                    imagedestroy($im);
+                                    echo "<br><br><p>".$this->translate('kartta_info')."</p>";
+                                }else{
+                                    echo "<p>Karttatiedostovirhe</p>";
+                                }
+                            }else{
+                                echo "<p>Karttatiedosto puuttuu</p>";
+                            }
+                        }
+                        $match = true;
+                        break;
+                    }
+                }
+                if (!$match) echo "<p>".$this->translate('kartta_ei_aineistoa')."</p>";
+            } else {
+                echo "<p>Tiedostovirhe</p>";
+            }
+        }
+    }
+    if (!$found) echo "<p>".$this->translate('kartta_ei_kirjastoa')."</p>";
+} else {
+    echo "<p>Päätiedostovirhe</p>";
+}
+?>
+</div>
