@@ -16,8 +16,8 @@ $param_dep = array_key_exists('dep', $params) ? htmlspecialchars($params['dep'])
 $param_cal = array_key_exists('cal', $params) ? htmlspecialchars($params['cal']) : "";
 $param_lan = array_key_exists('lan', $params) ? htmlspecialchars($params['lan']) : "fi";
 $param_for = array_key_exists('format', $params) ? trim(htmlspecialchars($params['format'])) : "";
-$path = "/data/vufind2-views/ratamo/ratamo/themes/custom/files/kirjastokartta/";
-$pathim = "/data/vufind2-views/ratamo/ratamo/themes/custom/images/kirjastokartta/";
+$path = "/data/vufind2-views/replace/replace/themes/custom/files/kirjastokartta/";
+$pathim = "/data/vufind2-views/replace/replace/themes/custom/images/kirjastokartta/";
 $param_deps = explode(',', $param_dep);
 $dep = trim($param_deps[0]);
 $loc = "";
@@ -145,4 +145,5 @@ if ($settingsfile){
 }
 ?>
 </div>
+
 
