@@ -11,7 +11,7 @@ kartta.phtml:
 karttaedit.phtml:  
 &nbsp;-&nbsp;riveillä 9 ja 10 korvaa replace/replace muodossa _organisaatio_/_näkymän nimi_  
 &nbsp;-&nbsp;riveillä 909 ja 910 korvaa replace näkymän nimellä  
-Lisää karttaedit.phtml:ssä riville 16 lainausmerkkien sisään valitsemasi salasana hashkoodattuna. Voit selvittää hashkoodin esim. täältä löytyvällä pw.phtml-tiedostolla (lisää se näkymäsi content-kansioon ja mene sitten sivulle: _organisaatio_.finna-pre.fi/content/pw ja kopioi sieltä saatu koodi). Toiminnossa ei siis ole erillisiä käyttäjätunnuksia, mutta se olisi ainakin jonkinlaisena mahdollista toteuttaa ilman suuria muutoksia.
+Lisää karttaedit.phtml:ssä riville 16 lainausmerkkien sisään valitsemasi salasana hashkoodattuna. Voit selvittää hashkoodin esim. täältä löytyvällä pw.phtml-tiedostolla (lisää se näkymäsi content-kansioon ja mene sitten sivulle: _organisaatio_.finna-pre.fi/content/pw ja kopioi sieltä saatu koodi). Toiminnossa ei siis ole erillisiä käyttäjätunnuksia, mutta se olisi luultavasti ainakin jonkinlaisena mahdollista toteuttaa ilman suuria muutoksia.
 
 2. Lisää tiedoston kartta.js sisältö joko näkymäsi tiedostoon themes/custom/js/custom.js  
 tai lisää se uutena javascript-tiedostona ja lisää siitä tieto tiedostoon themes/custom/theme.config.php  
