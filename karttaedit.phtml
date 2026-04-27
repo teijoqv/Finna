@@ -13,24 +13,18 @@ $formtype = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (!array_key_exists("formtype", $_POST)) exit();
     $formtype = $_POST["formtype"];
-    $hashedpassword = 'replacehash';
+    $hashedpassword = '$2y$10$b5O8dyzcDm5KyYFqnBqrn.z8.ao36eWG236ZyUXjJncy.u7OOeYzS';
     if ($formtype == "testpassword"){
-        if (!array_key_exists("password", $_POST)) exit();
-        $password = htmlspecialchars($_POST["password"]);
+        if (!array_key_exists("kepassword", $_POST)) exit();
+        $password = htmlspecialchars($_POST["kepassword"]);
         if (password_verify($password, $hashedpassword)){
             $_SESSION["karttaeditpw"] = "approved";
-            if (!is_dir(PATHFILE)){
-                mkdir(PATHFILE);       
-            }
-            if (!is_dir(PATHIMAGE)){
-                mkdir(PATHIMAGE);       
-            }
         }else{
             usleep(2000000);
             echo '<form method="post" action="karttaedit">
                 <input type="hidden" name="formtype" value="testpassword">
-                <label for="password">Salasana:</label>
-                <input type="text" name="password">
+                <label for="kepassword">Salasana:</label>
+                <input type="text" name="kepassword">
                 <input class="btn" type="submit" value="Kirjaudu">
             </form>
             </div></div>';
@@ -43,8 +37,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }else{
     echo '<form method="post" action="karttaedit">
         <input type="hidden" name="formtype" value="testpassword">
-        <label for="password">Salasana:</label>
-        <input type="text" name="password">
+        <label for="kepassword">Salasana:</label>
+        <input type="text" name="kepassword">
         <input class="btn" type="submit" value="Kirjaudu">
     </form>
     </div></div>';
@@ -434,14 +428,16 @@ function createRule($dep, $loc, $for, $gen, $cla, $sig1, $sig2, $marksfi, $marks
             $sigcont .= "-".$sig2;
         }
         $sigcont .= "].?.?$";
-        if ($clacont == "" && $gencont != ""){
-            $sigcont = "\S* ".$sigcont;
-        }
-        if ($clacont == "" && $gencont == ""){
-            $sigcont = "(^".$sigcont."| ".$sigcont.")";
-        }
+    }else{
+        $sigcont = ".?.?.?$";
+    }    
+    if ($clacont == "" && $gencont != ""){
+        $sigcont = "\S* ".$sigcont;
     }
-    
+    if ($clacont == "" && $gencont == ""){
+        $sigcont = "(^".$sigcont."| ".$sigcont.")";
+    }
+
     $depreg = "/".$depcont."/";
     $locreg = "/".$loccont."/";
     $forreg = "/".$forcont."/";
