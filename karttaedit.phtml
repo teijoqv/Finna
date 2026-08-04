@@ -6,8 +6,8 @@
 
 $this->headTitle('muokkaus');
 
-const PATHFILE = "/data/vufind2-views/replace/replace/themes/custom/files/kirjastokartta/";
-const PATHIMAGE = "/data/vufind2-views/replace/replace/themes/custom/images/kirjastokartta/";
+define ("PATHFILE", dirname(__FILE__, 3)."/files/kirjastokartta/");
+define ("PATHIMAGE", dirname(__FILE__, 3)."/images/kirjastokartta/");
 $formtype = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
