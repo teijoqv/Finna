@@ -5,7 +5,7 @@
 Viimeistään ennen vaihetta 6., jolla toiminto asetetaan käyttöön, muokkaa Editointi-kohdassa kuvatulla tavalla kirjastojen aineistojen sijaintitietoja.  
 
 1. Lisää tiedostot kartta.phtml ja karttaedit.phtml näkymäsi kansioon themes/custom/templates/content  
-Muuta karttaedit.phtml-tiedostossa tiedostopolku vastaamaan omaa näkymääsi, eli Javascript-osuuden alussa riveillä 915 ja 916 korvaa _replace_ oman näkymäsi nimellä.  
+Muuta karttaedit.phtml-tiedostossa Javascript-osuuden tiedostopolku vastaamaan omaa näkymääsi, eli riveillä 915 ja 916 korvaa _replace_ oman näkymäsi nimellä.  
 Lisää karttaedit.phtml:ssä riville 16 lainausmerkkien sisään valitsemasi salasana hashkoodattuna. Voit selvittää hashkoodin esim. täältä löytyvällä pw.phtml-tiedostolla (lisää se näkymäsi content-kansioon ja mene sitten sivulle: _organisaatio_.finna-pre.fi/content/pw ja kopioi sieltä saatu koodi). Muista valita riittävän vahva salasana! Toiminnossa ei siis ole erillisiä käyttäjätunnuksia, mutta se olisi luultavasti ainakin jonkinlaisena mahdollista toteuttaa ilman suuria muutoksia.
 
 2. Lisää tiedoston kartta.js sisältö joko näkymäsi tiedostoon themes/custom/js/custom.js  
